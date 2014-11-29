@@ -1,0 +1,11 @@
+{
+    "name": "djfm/ftr",
+    "description": "A functional test runner",
+    "authors": [
+        {
+            "name": "François-Marie de Jouvencel",
+            "email": "fm.de.jouvencel@gmail.com"
+        }
+    ],
+    "require": {}
+}
