@@ -103,19 +103,9 @@ class TestMethod implements TestInterface
 
 	}
 
-	public function getUniqueIdentifier()
+	public function getTestIdentifier()
 	{
-
-	}
-
-	public function getHumanIdentifier()
-	{
-
-	}
-
-	public function getTags()
-	{
-
+		return $this->className . '::' . $this->name;
 	}
 
 	/**

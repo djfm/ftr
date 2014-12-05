@@ -9,7 +9,5 @@ interface TestInterface extends ArraySerializableInterface
 	public function run();
 	public function getOutputValue();
 	public function getArtifacts();
-	public function getUniqueIdentifier();
-	public function getHumanIdentifier();
-	public function getTags();
+	public function getTestIdentifier();
 }
