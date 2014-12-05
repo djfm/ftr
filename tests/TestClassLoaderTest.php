@@ -107,4 +107,16 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(['a' => 'testA'], $eps[1][0]->getTestable(1)->getDependencies());
 		$this->assertEquals(['a' => 'testA'], $eps[2][0]->getTestable(1)->getDependencies());
 	}
+
+	public function testMultipleDataProviders()
+	{
+		$loader = new TestClassLoader();
+
+		$src = __DIR__ . '/fixtures/DataProviderMadnessTest.php';
+
+		$testPlan = $loader->loadFile($src);
+		$eps = $testPlan->getExecutionPlans();
+		$this->assertEquals(6, count($eps));
+		$this->assertEquals(18, $testPlan->getTestsCount());
+	}
 }

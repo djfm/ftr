@@ -59,6 +59,7 @@ class TestClassLoader implements LoaderInterface
 
 			foreach ($dataProviderArguments as $arguments) {
 				$testMethod = $this->newTestMethod($filePath, $className, $method, $dcp);
+				$testMethod->setDataProviderArguments($arguments);
 				$testMethods[] = $testMethod;
 			}
 

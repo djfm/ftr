@@ -4,7 +4,7 @@ namespace djfm\ftr;
 
 class TestMethod implements TestInterface
 {
-	private $inputArguments;
+	private $inputArguments = [];
 	private $classFilePath;
 	private $className;
 	private $executionPlan;
@@ -56,11 +56,17 @@ class TestMethod implements TestInterface
 		return $this;
 	}
 
-	public function setInputArguments(array $inputArguments = array())
+	public function setInputArgumentValue($argumentName, $value)
 	{
-		$this->inputArguments = $inputArguments;
-
+		$this->inputArguments[$argumentName] = $value;
 		return $this;
+	}
+
+	public function setDataProviderArguments(array $args)
+	{
+		foreach ($args as $pos => $value) {
+			$this->setInputArgumentValue($this->expectedInputArgumentNames[$pos], $value);
+		}
 	}
 
 	public function setDependency($argumentName, $testName)
@@ -123,7 +129,8 @@ class TestMethod implements TestInterface
 			'className' => $this->className,
 			'expectedInputArgumentNames' => $this->expectedInputArgumentNames,
 			'name' => $this->name,
-			'dependencies' => $this->dependencies
+			'dependencies' => $this->dependencies,
+			'inputArguments' => $this->inputArguments
 		];
 	}
 
@@ -134,6 +141,7 @@ class TestMethod implements TestInterface
 		$this->expectedInputArgumentNames = $arr['expectedInputArgumentNames'];
 		$this->name = $arr['name'];
 		$this->dependencies = $arr['dependencies'];
+		$this->inputArguments = $arr['inputArguments'];
 
 		return $this;
 	}
