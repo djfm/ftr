@@ -75,4 +75,36 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(['a' => 'testA', 'b' => 'testB'], $eps[0][0]->getTestable(2)->getDependencies());
 		$this->assertEquals(['b' => 'testB', 'a' => 'testA'], $eps[0][0]->getTestable(3)->getDependencies());
 	}
+
+	public function testAtDependsAnnotationWithDataProvider()
+	{
+		$loader = new TestClassLoader();
+
+		$src = __DIR__ . '/fixtures/AnAdvancedDependsTest.php';
+		$className = 'djfm\ftr\tests\fixtures\AnAdvancedDependsTest';
+
+		$testPlan = $loader->makeTestPlan($src, $className);
+		$eps = $testPlan->getExecutionPlans();
+		$this->assertEquals(1, count($eps));
+
+		$this->assertEquals(['a' => 'testA'], $eps[0][0]->getTestable(1)->getDependencies());
+		$this->assertEquals(['a' => 'testA'], $eps[0][0]->getTestable(2)->getDependencies());
+		$this->assertEquals(['a' => 'testA'], $eps[0][0]->getTestable(3)->getDependencies());
+	}
+
+	public function testAtDependsAnnotationWithParallelDataProvider()
+	{
+		$loader = new TestClassLoader();
+
+		$src = __DIR__ . '/fixtures/AnAdvancedDependsParallelTest.php';
+		$className = 'djfm\ftr\tests\fixtures\AnAdvancedDependsParallelTest';
+
+		$testPlan = $loader->makeTestPlan($src, $className);
+		$eps = $testPlan->getExecutionPlans();
+		$this->assertEquals(3, count($eps));
+
+		$this->assertEquals(['a' => 'testA'], $eps[0][0]->getTestable(1)->getDependencies());
+		$this->assertEquals(['a' => 'testA'], $eps[1][0]->getTestable(1)->getDependencies());
+		$this->assertEquals(['a' => 'testA'], $eps[2][0]->getTestable(1)->getDependencies());
+	}
 }
