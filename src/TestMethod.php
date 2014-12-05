@@ -62,6 +62,11 @@ class TestMethod implements TestInterface
 		return $this;
 	}
 
+	public function getInputArguments()
+	{
+		return $this->inputArguments();
+	}
+
 	public function setDataProviderArguments(array $args)
 	{
 		foreach ($args as $pos => $value) {
