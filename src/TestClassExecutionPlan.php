@@ -67,6 +67,11 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		}, $pars);
 	}
 
+	public function getTestable($n)
+	{
+		return $this->testables[$n];
+	}
+
 	public function runBefore()
 	{
 

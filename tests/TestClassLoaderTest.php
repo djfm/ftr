@@ -59,4 +59,20 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(1, count($executionPlans[2]));
 		$this->assertEquals(6, $plan->getTestsCount());
 	}
+
+	public function testAtDependsAnnotation()
+	{
+		$loader = new TestClassLoader();
+
+		$src = __DIR__ . '/fixtures/ASimpleDependsTest.php';
+		$className = 'djfm\ftr\tests\fixtures\ASimpleDependsTest';
+
+		$testPlan = $loader->makeTestPlan($src, $className);
+		$eps = $testPlan->getExecutionPlans();
+		$this->assertEquals(1, count($eps));
+
+		$this->assertEquals(['a' => 'testA'], $eps[0][0]->getTestable(1)->getDependencies());
+		$this->assertEquals(['a' => 'testA', 'b' => 'testB'], $eps[0][0]->getTestable(2)->getDependencies());
+		$this->assertEquals(['b' => 'testB', 'a' => 'testA'], $eps[0][0]->getTestable(3)->getDependencies());
+	}
 }
