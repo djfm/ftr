@@ -5,6 +5,8 @@ namespace djfm\ftr;
 use ReflectionClass;
 use ReflectionMethod;
 
+use djfm\ftr\Helper\DocCommentParser;
+
 class TestClassLoader implements LoaderInterface
 {
 	public function loadFile($filePath)
@@ -20,29 +22,71 @@ class TestClassLoader implements LoaderInterface
 		return $testPlan;
 	}
 
+	private function isTestMethod(ReflectionMethod $method, DocCommentParser $dcp) {
+		return preg_match('/^test/', $method->getName());
+	}
+
 	public function makeTestPlan($filePath, $className)
 	{
+		// We need the following line for the subtle case where makeTestPlan
+		// would be called bfore loadFile - we may instanciate $className
+		// in this function, so we first make sure that the ClassDiscoverer
+		// knows about the class as it can only discover it before it is
+		// required for the first time.
+		ClassDiscoverer::getDeclaredClasses($filePath);
+
 		$executionPlan = new TestClassExecutionPlan();
 		$executionPlan->setClassFilePath($filePath)->setClassName($className);
 		
 		$refl = new ReflectionClass($className);
 
-
 		foreach ($refl->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
 			$dcp = new DocCommentParser($method->getDocComment());
 
-			$testMethod = new TestMethod();
-			$testMethod->setClassFilePath($filePath)->setClassName($className);
+			if (!$this->isTestMethod($method, $dcp)) {
+				continue;
+			}
 
-			$expectedInputArgumentNames = array_map(function ($parameter) {
-				return $parameter->getName();
-			}, $method->getParameters());
+			$dataProviderArguments = [[]];
 
-			$testMethod->setExpectedInputArgumentNames($expectedInputArgumentNames);
+			if ($dcp->hasOption('dataprovider')) {
+				$dataProviderArguments = $executionPlan->call(
+					$dcp->getOption('dataprovider')
+				);
+			}
 
-			$executionPlan->addTestMethod($testMethod);
+			$testMethods = [];
+
+			foreach ($dataProviderArguments as $arguments) {
+				$testMethod = $this->newTestMethod($filePath, $className, $method, $dcp);
+				$testMethods[] = $testMethod;
+			}
+
+			if ($dcp->hasOption('parallelize')) {
+				$executionPlan->addTestMethods($testMethods);
+			} else {
+				foreach ($testMethods as $testMethod) {
+					$executionPlan->addTestMethod($testMethod);
+				}
+			}
 		}
 
 		return $executionPlan;
+	}
+
+	private function newTestMethod($filePath, $className, ReflectionMethod $method, DocCommentParser $dcp)
+	{		
+		$testMethod = new TestMethod();
+		$testMethod->setClassFilePath($filePath)->setClassName($className);
+
+		$expectedInputArgumentNames = array_map(function ($parameter) {
+			return $parameter->getName();
+		}, $method->getParameters());
+
+		$testMethod->setExpectedInputArgumentNames($expectedInputArgumentNames);
+
+		$testMethod->setName($method->getName());
+
+		return $testMethod;
 	}
 }

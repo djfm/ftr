@@ -36,5 +36,27 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 
 		$this->assertEquals(1, count($executionPlans));
 		$this->assertEquals(1, count($executionPlans[0]));
+		$this->assertEquals(4, $plan->getTestsCount());
+	}
+
+	public function testLoaderFindsTestsFromAClassWithDataProviderParallel()
+	{
+		$loader = new TestClassLoader();
+
+		$src = __DIR__ . '/fixtures/ATestWithParallelDataProviderTest.php';
+		$className = 'djfm\ftr\tests\fixtures\ATestWithParallelDataProviderTest';
+
+		$testPlan = $loader->makeTestPlan($src, $className);
+		$this->assertEquals(3, count($testPlan->getExecutionPlans()));
+
+		$plan = $loader->loadFile($src);
+
+		$executionPlans = $plan->getExecutionPlans();
+
+		$this->assertEquals(3, count($executionPlans));
+		$this->assertEquals(1, count($executionPlans[0]));
+		$this->assertEquals(1, count($executionPlans[1]));
+		$this->assertEquals(1, count($executionPlans[2]));
+		$this->assertEquals(6, $plan->getTestsCount());
 	}
 }

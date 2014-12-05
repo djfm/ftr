@@ -9,6 +9,7 @@ class TestMethod implements TestInterface
 	private $className;
 	private $executionPlan;
 	private $expectedInputArgumentNames;
+	private $name;
 
 	public function setClassFilePath($path)
 	{
@@ -43,6 +44,13 @@ class TestMethod implements TestInterface
 	public function setExpectedInputArgumentNames(array $names)
 	{
 		$this->expectedInputArgumentNames = $names;		
+
+		return $this;
+	}
+
+	public function setName($name)
+	{
+		$this->name = $name;
 
 		return $this;
 	}
@@ -93,7 +101,8 @@ class TestMethod implements TestInterface
 		return [
 			'classFilePath' => $this->classFilePath,
 			'className' => $this->className,
-			'expectedInputArgumentNames' => $this->expectedInputArgumentNames
+			'expectedInputArgumentNames' => $this->expectedInputArgumentNames,
+			'name' => $this->name
 		];
 	}
 
@@ -102,6 +111,7 @@ class TestMethod implements TestInterface
 		$this->classFilePath = $arr['classFilePath'];
 		$this->className = $arr['className'];
 		$this->expectedInputArgumentNames = $arr['expectedInputArgumentNames'];
+		$this->name = $arr['name'];
 
 		return $this;
 	}

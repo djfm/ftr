@@ -2,6 +2,8 @@
 
 namespace djfm\ftr;
 
+use ReflectionClass;
+
 class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterface
 {
 	private $testables = [];
@@ -34,34 +36,35 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
 	public function getExecutionPlans()
 	{
-		$testablesChains = [[]];
-
-		foreach ($this->testables as $testables) {
-			if (!is_array($testables)) {
-				$testables = [$testables];
+		$seqOfParMethods = array_map(function ($testable) {
+			if (is_array($testable)) {
+				return $testable;
+			} else {
+				return [$testable];
 			}
-			$newTestablesChain = [];
-			foreach ($testablesChains as $chain) {
-				foreach ($testables as $testable) {
-					$newChain = $chain;
-					$newChain[] = $testable;
-					$newTestablesChain[] = $newChain;
+		}, $this->testables);
+
+		$pars = [[]];
+
+		foreach ($seqOfParMethods as $parMethods) {
+			$newPars = [];
+			foreach ($pars as $sequenceSoFar) {
+				foreach ($parMethods as $method) {
+					$seq = $sequenceSoFar;
+					$seq[] = clone $method;
+					$newPars[] = $seq;
 				}
 			}
-			$testablesChains = $newTestablesChain;
+			$pars = $newPars;
 		}
 
-		$plans = [];
-
-		foreach ($testablesChains as $chain) {
+		return array_map(function ($testables) {
 			$plan = $this->shallowClone();
-			foreach ($chain as $testable) {
+			foreach ($testables as $testable) {
 				$plan->addTestMethod($testable);
 			}
-			$plans[] = $plan;
-		}
-
-		return [$plans];
+			return [$plan];
+		}, $pars);
 	}
 
 	public function runBefore()
@@ -106,6 +109,27 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		}
 
 		return $n;
+	}
+
+	public function call($name, array $arguments = array())
+	{
+		if (!class_exists($this->className)) {
+			$this->includeClassFile();
+		}
+		$refl = new ReflectionClass($this->className);
+		$method = $refl->getMethod($name);
+
+		$mThis = null;
+		if (!$method->isStatic()) {
+			$mThis = new $this->className;
+		}
+
+		return $method->invokeArgs($mThis, $arguments);
+	}
+
+	public function includeClassFile()
+	{
+		include $this->classFilePath;
 	}
 
 	public function toArray()
