@@ -1,6 +1,9 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\Loader;
+
+use djfm\ftr\Loader\LoaderInterface;
+use djfm\ftr\TestClass\TestClassLoader;
 
 class Loader implements LoaderInterface
 {

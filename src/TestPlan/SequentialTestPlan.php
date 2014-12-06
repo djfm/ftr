@@ -1,6 +1,6 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\TestPlan;
 
 class SequentialTestPlan implements TestPlanInterface
 {

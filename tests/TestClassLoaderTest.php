@@ -2,7 +2,7 @@
 
 namespace djfm\ftr\tests;
 
-use djfm\ftr\TestClassLoader;
+use djfm\ftr\TestClass\TestClassLoader;
 
 class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 {

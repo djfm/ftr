@@ -1,8 +1,8 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\ExecutionPlan;
 
-use Serializable;
+use djfm\ftr\Helper\ArraySerializableInterface;
 
 interface ExecutionPlanInterface extends ArraySerializableInterface
 {

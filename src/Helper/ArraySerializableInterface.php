@@ -1,6 +1,6 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\Helper;
 
 interface ArraySerializableInterface
 {

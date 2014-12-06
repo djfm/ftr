@@ -2,7 +2,7 @@
 
 namespace djfm\ftr\tests;
 
-use djfm\ftr\ClassDiscoverer;
+use djfm\ftr\Helper\ClassDiscoverer;
 
 class ClassDiscovererTest extends \PHPUnit_Framework_TestCase
 {

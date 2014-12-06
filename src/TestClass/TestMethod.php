@@ -1,6 +1,8 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\TestClass;
+
+use djfm\ftr\Test\TestInterface;
 
 class TestMethod implements TestInterface
 {
@@ -44,7 +46,7 @@ class TestMethod implements TestInterface
 
 	public function setExpectedInputArgumentNames(array $names)
 	{
-		$this->expectedInputArgumentNames = $names;		
+		$this->expectedInputArgumentNames = $names;
 
 		return $this;
 	}

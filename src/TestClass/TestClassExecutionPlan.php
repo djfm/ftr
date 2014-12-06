@@ -1,8 +1,11 @@
 <?php
 
-namespace djfm\ftr;
+namespace djfm\ftr\TestClass;
 
 use ReflectionClass;
+use djfm\ftr\Exception\NotAnExecutionPlanException;
+use djfm\ftr\ExecutionPlan\ExecutionPlanInterface;
+use djfm\ftr\TestPlan\TestPlanInterface;
 
 class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterface
 {
@@ -10,6 +13,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
 	private $classFilePath;
 	private $className;
+	private $isExecutionPlan = false;
 
 	public function setClassFilePath($path)
 	{
@@ -60,6 +64,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
 		return array_map(function ($testables) {
 			$plan = $this->shallowClone();
+			$plan->isExecutionPlan = true;
 			foreach ($testables as $testable) {
 				$plan->addTestMethod($testable);
 			}
@@ -74,17 +79,23 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
 	public function runBefore()
 	{
-
+		if (!$this->isExecutionPlan) {
+			throw new NotAnExecutionPlanException();
+		}
 	}
 
 	public function run()
 	{
-
+		if (!$this->isExecutionPlan) {
+			throw new NotAnExecutionPlanException();
+		}
 	}
 
 	public function runAfter()
 	{
-		
+		if (!$this->isExecutionPlan) {
+			throw new NotAnExecutionPlanException();
+		}
 	}
 
 	public function addTestMethod(TestMethod $testMethod)
