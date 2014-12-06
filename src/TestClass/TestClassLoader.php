@@ -14,7 +14,14 @@ class TestClassLoader implements LoaderInterface
 {
     public function loadFile($filePath)
     {
-        $classes = ClassDiscoverer::getDeclaredClasses($filePath);
+        $classes = array_filter(
+            ClassDiscoverer::getDeclaredClasses($filePath),
+            [$this, 'isTestClass']
+        );
+
+        if (empty($classes)) {
+            return false;
+        }
 
         $testPlan = new ParallelTestPlan();
 
@@ -28,6 +35,11 @@ class TestClassLoader implements LoaderInterface
     private function isTestMethod(ReflectionMethod $method, DocCommentParser $dcp)
     {
         return preg_match('/^test/', $method->getName());
+    }
+
+    public function isTestClass($className)
+    {
+        return preg_match('/Test$/', $className);
     }
 
     public function makeTestPlan($filePath, $className)

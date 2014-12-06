@@ -7,11 +7,15 @@
             "email": "fm.de.jouvencel@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "symfony/console": "~2.6",
+        "symfony/finder": "~2.6"
+    },
     "autoload": {
     	"psr-4": {
     		"djfm\\ftr\\": "src/",
-    		"djfm\\ftr\\tests\\": "tests/"
+    		"djfm\\ftr\\tests\\": "tests/",
+            "djfm\\ftr\\app\\": "app/"
     	}
     },
     "require-dev": {
