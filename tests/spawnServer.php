@@ -11,4 +11,4 @@ $address = $server->bind();
 
 echo "$address\n";
 
-$server->listen();
+$server->run();
