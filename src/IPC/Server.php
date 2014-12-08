@@ -4,45 +4,54 @@ namespace djfm\ftr\IPC;
 
 use djfm\ftr\Exception\CouldNotBindToSocketException;
 
+use React\Socket\ConnectionException;
+use React\EventLoop\Factory as EventLoopFactory;
+use React\Socket\Server as SocketServer;
+use React\Http\Server as HttpServer;
+
 class Server
 {
 	private $server;
 	private $address;
 
-	public function bind($ip = '0.0.0.0', $port = 55555, $maxPort = 100000)
+	public function bind($ip = 'localhost', $port = 1024, $maxPort = 2048)
 	{
-		$server = null;
-		$address = null;
-		for ($p = $port; !$server && $p < $maxPort; $p++) {
-			$address = 'tcp://' . $ip . ':' . $p;
-			$server = stream_socket_server($address);
+		$loop = EventLoopFactory::create();
+		$socket = new SocketServer($loop);
+		$http = new HttpServer($socket, $loop);
+
+		$http->on('request', [$this, 'reply']);
+
+		for ($p = $port; $p <= $maxPort; $p++) {
+			try {
+				$socket->listen($p, $ip);
+				break;
+			} catch (ConnectionException $e) {
+				if ($p === $maxPort) {
+					throw new CouldNotBindToSocketException($e->getMessage(), 0, $e);
+				}
+			}
 		}
 
-		if ($server) {
-			$this->server = $server;
-			$this->address = $address;
-			return $address;
-		} else {
-			throw new CouldNotBindToSocketException();
-		}
+		$this->http = $http;
+		$this->loop = $loop;
+
+		return "http://$ip:$p";
 	}
 
-	public function listen()
+	public function run()
 	{
-		for (;;) {
-			$client = stream_socket_accept($this->server);
-		}
+		$this->loop->addPeriodicTimer(1, [$this, 'tick']);
+		$this->loop->run();
 	}
 
-	public function stop()
+	public function reply($request, $response)
 	{
-		if ($this->server) {
-			fclose($this->server);
-		}
+	    $response->writeHead(200, array('Content-Type' => 'text/plain'));
+	    $response->end("ftrftrftr");
+	}
 
-		$this->server = null;
-		$this->address = null;
-
-		return $this;
+	public function tick()
+	{
 	}
 }

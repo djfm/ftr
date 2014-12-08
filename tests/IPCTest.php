@@ -5,9 +5,11 @@ namespace djfm\ftr\tests;
 use djfm\ftr\IPC\Server;
 use djfm\ftr\IPC\Client;
 use djfm\ftr\Exception\CouldNotConnectToServerException;
+use djfm\ftr\Helper\Process as ProcessHelper;
 
-use djfm\ftr\Process\ProcessBuilder;
-use djfm\ftr\Process\Process;
+
+use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 
 class IPCTest extends \PHPUnit_Framework_TestCase
 {
@@ -17,31 +19,35 @@ class IPCTest extends \PHPUnit_Framework_TestCase
 		$process = $builder->getProcess();
 		$process->start();
 		$address = null;
+
 		while ($process->isRunning() && !$address) {
 			$address = $process->getOutput();
 			sleep(1);
 		}
-		return [
-			'address' => $address,
-			'stop' => function () use ($process) {
-				echo "stopping process";
+
+		$stop = function () use ($process) {
+			if ($process->isRunning()) {
+				ProcessHelper::killChildren($process);
 				$process->stop();
 			}
-		];
-	}
+		};
 
-	public function tesICanHazSocketz()
-	{
-		$server = new Server();
-		$address = $server->bind();
-		$this->assertInternalType('string', $address);
-		$server->stop();
+		register_shutdown_function($stop);
+
+		return [
+			'address' => $address,
+			'stop' => $stop
+		];
 	}
 
 	public function testICanConnectToServer()
 	{
 		$server = $this->spawnServer();
 
-		//$server['stop']();
+		$client = new Client($server['address']);
+
+		$this->assertEquals('ftrftrftr', $client->get());
+
+		$server['stop']();
 	}
 }

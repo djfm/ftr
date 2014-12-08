@@ -8,31 +8,23 @@ class Client
 {
 	private $address;
 
-	public function connect($address)
+	public function __construct($address)
 	{
-		$errno = null;
-		$errorMessage = null;
-
-		$client = stream_socket_client($address, $errno, $errorMessage);
-		if (!$client) {
-			throw new CouldNotConnectToServerException($errorMessage, $errno);
-		} else {
-			$this->address = $address;
-			$this->client = $client;
-		}
-
-		return $this;
+		$this->address = $address;
 	}
 
-	public function disconnect()
+	public function get($path = '/')
 	{
-		if ($this->client) {
-			fclose($this->client);
-		}
+		return $this->request('GET', $path);
+	}
 
-		$this->client = null;
-		$this->address = null;
-
-		return $this;
+	private function request($method, $path, $payload = null)
+	{
+		$url = rtrim($this->address, '/') . '/' . ltrim($path, '/');
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response = curl_exec($ch);
+		curl_close($ch);
+		return $response;
 	}
 }
