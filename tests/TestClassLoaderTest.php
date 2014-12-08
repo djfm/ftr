@@ -40,6 +40,7 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 		$seq = $executionPlans[0];
 
 		$jsonSeq = ExecutionPlanHelper::serializeSequence($seq);
+
 		$unserializedSeq = ExecutionPlanHelper::unSerializeSequence($jsonSeq);
 
 		$this->assertEquals($seq[0]->toArray(), $unserializedSeq[0]->toArray());
