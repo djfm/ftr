@@ -8,8 +8,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use djfm\ftr\Loader\Loader;
 use djfm\ftr\Exception\NoSuchFileOrDirectoryException;
 use djfm\ftr\TestPlan\ParallelTestPlan;
+use djfm\ftr\IPC\Server;
 
-class Runner
+class Runner extends Server
 {
 	private $test;
 	private $informationOnly = false;
@@ -94,6 +95,11 @@ class Runner
 	public function run()
 	{
 		$this->loadTests();
+		if ($this->informationOnly) {
+			$this->writeln("Information only mode - not going to actually run the tests.");
+		} else {
+			
+		}
 	}
 
 	public function loadTests()
