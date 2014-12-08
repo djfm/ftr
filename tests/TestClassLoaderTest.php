@@ -3,6 +3,7 @@
 namespace djfm\ftr\tests;
 
 use djfm\ftr\TestClass\TestClassLoader;
+use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
 
 class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 {
@@ -24,6 +25,24 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals(1, count($executionPlans));
 		$this->assertEquals(1, count($executionPlans[0]));
 		$this->assertEquals(3, $plan->getTestsCount());
+	}
+
+	public function testExecutionPlanSerialization()
+	{
+		$loader = new TestClassLoader();
+
+		$plan = $loader->loadFile(__DIR__ . '/fixtures/ASimpleTest.php');
+
+		$executionPlans = $plan->getExecutionPlans();
+
+		$this->assertEquals(1, count($executionPlans));
+
+		$seq = $executionPlans[0];
+
+		$jsonSeq = ExecutionPlanHelper::serializeSequence($seq);
+		$unserializedSeq = ExecutionPlanHelper::unSerializeSequence($jsonSeq);
+
+		$this->assertEquals($seq[0]->toArray(), $unserializedSeq[0]->toArray());
 	}
 
 	public function testLoaderFindsTestsFromAClassWithDataProviderNotParallel()

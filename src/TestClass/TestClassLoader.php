@@ -14,6 +14,10 @@ class TestClassLoader implements LoaderInterface
 {
     public function loadFile($filePath)
     {
+        if (!preg_match('/[tT]est\.php$/', $filePath)) {
+            return false;
+        }
+
         $classes = array_filter(
             ClassDiscoverer::getDeclaredClasses($filePath),
             [$this, 'isTestClass']
