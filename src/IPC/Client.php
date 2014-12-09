@@ -10,7 +10,14 @@ class Client
 
 	public function __construct($address)
 	{
+		$this->setAddress($address);
+	}
+
+	public function setAddress()
+	{
 		$this->address = $address;
+
+		return $this;
 	}
 
 	public function get($path = '/')
