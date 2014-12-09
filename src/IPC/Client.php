@@ -13,7 +13,7 @@ class Client
 		$this->setAddress($address);
 	}
 
-	public function setAddress()
+	public function setAddress($address)
 	{
 		$this->address = $address;
 
