@@ -4,11 +4,17 @@ namespace djfm\ftr;
 
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\ProcessBuilder;
+use Symfony\Component\Process\Process;
 
 use djfm\ftr\Loader\Loader;
 use djfm\ftr\Exception\NoSuchFileOrDirectoryException;
 use djfm\ftr\TestPlan\ParallelTestPlan;
 use djfm\ftr\IPC\Server;
+use djfm\ftr\Helper\Process as ProcessHelper;
+use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
+
+use Exception;
 
 class Runner extends Server
 {
@@ -20,6 +26,9 @@ class Runner extends Server
 	private $dataProviderFilter;
 	private $outputInterface;
 	private $executionPlans = [];
+	private $dispatchedPlans = [];
+
+	private $spawnedClients = [];
 
 	public function setTest($test)
 	{
@@ -92,14 +101,120 @@ class Runner extends Server
 		return $this;
 	}
 
+	public function log($data)
+	{
+		$this->writeln($data);
+
+		return $this;
+	}
+
 	public function run()
 	{
 		$this->loadTests();
 		if ($this->informationOnly) {
 			$this->writeln("Information only mode - not going to actually run the tests.");
 		} else {
-			
+			$this->bind();
+			$this->writeln(sprintf('<info>Started test server on %s</info>', $this->getAddress()));
+			parent::run();
 		}
+	}
+
+	public function reply($request, $response)
+	{
+		// don't trust clients to be consistent
+		$path = rtrim($request->getPath(), '/');
+
+		$method = $request->getMethod();
+		
+		if ($method === 'POST') {
+			$m = [];
+			if ($path === '/executionPlans/get') {
+				$response->writeHead(200, array('Content-Type' => 'application/json'));
+
+				$data = [];
+
+				if (!empty($this->executionPlans)) {
+					$plans = array_shift($this->executionPlans);
+					$this->dispatchedPlans[] = $plans;
+					$data['planToken'] = count($this->dispatchedPlans) - 1;
+					$data['plans'] = ExecutionPlanHelper::serializeSequence($plans);
+				}
+				$response->end(json_encode($data));
+				return;
+			} else if (preg_match('#^/executionPlans/(\d+)/done$#', $path, $m)) {
+				$planToken = (int)$m[1];
+				$this->log('<info>Finished plan ' . $planToken . '</info>');
+				$response->end();
+				return;
+			}
+		}
+
+	    $response->writeHead(404, array('Content-Type' => 'text/plain'));
+	    $response->end("ftrftrftr");
+	}
+
+	public function tick()
+	{
+		$remainingClients = [];
+		foreach ($this->spawnedClients as $client) {
+			if ($client['isRunning']()) {
+				$remainingClients[] = $client;
+			}
+		}
+		$this->spawnedClients = $remainingClients;
+
+		while (count($this->spawnedClients) < $this->maxProcesses && !empty($this->executionPlans)) {
+			$this->log('<info>Spawning a new client.</info>');
+			$this->spawnClient();
+		}
+	}
+
+	public function spawnClient()
+	{
+		$pathToWorker = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'worker';
+
+		if (!is_file($pathToWorker)) {
+			throw new Exception('Did not find worker script: `' . $pathToWorker . '`');
+		}
+
+		$settings = json_encode([
+			'serverAddress' => $this->getAddress(),
+			'environment' => []
+		]);
+
+		$builder = new ProcessBuilder([PHP_BINARY, $pathToWorker, $settings]);
+		
+		$process = $builder->getProcess();
+		$process->start(function ($type, $buffer) {
+			$buffer = rtrim($buffer);
+			if (Process::ERR === $type) {
+				$this->writeln('<error>' . $buffer . '</error>');
+			} else {
+				$this->writeln('<info>' . $buffer . '</info>');
+			}
+		});
+
+		$stop = function () use ($process) {
+			if ($process->isRunning()) {
+				ProcessHelper::killChildren($process);
+				$process->stop();
+			}
+		};
+
+		$isRunning = function () use ($process) {
+			return $process->isRunning();
+		};
+
+		register_shutdown_function($stop);
+
+		$handle = [
+			'process' => $process,
+			'stop' => $stop,
+			'isRunning' => $isRunning
+		];
+
+		$this->spawnedClients[] = $handle;
 	}
 
 	public function loadTests()

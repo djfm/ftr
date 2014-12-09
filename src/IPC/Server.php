@@ -36,7 +36,14 @@ class Server
 		$this->http = $http;
 		$this->loop = $loop;
 
-		return "http://$ip:$p";
+		$this->address = "http://$ip:$p";
+
+		return $this->address;
+	}
+
+	public function getAddress()
+	{
+		return $this->address;
 	}
 
 	public function run()
