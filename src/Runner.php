@@ -30,6 +30,8 @@ class Runner extends Server
 
 	private $spawnedClients = [];
 
+	private $dispatchedCount = 0;
+
 	public function setTest($test)
 	{
 		$this->test = $test;
@@ -131,20 +133,11 @@ class Runner extends Server
 			$m = [];
 			if ($path === '/executionPlans/get') {
 				$response->writeHead(200, array('Content-Type' => 'application/json'));
-
-				$data = [];
-
-				if (!empty($this->executionPlans)) {
-					$plans = array_shift($this->executionPlans);
-					$this->dispatchedPlans[] = $plans;
-					$data['planToken'] = count($this->dispatchedPlans) - 1;
-					$data['plans'] = ExecutionPlanHelper::serializeSequence($plans);
-				}
-				$response->end(json_encode($data));
+				$response->end(json_encode($this->dispatchPlan()));
 				return;
 			} else if (preg_match('#^/executionPlans/(\d+)/done$#', $path, $m)) {
 				$planToken = (int)$m[1];
-				$this->log('<info>Finished plan ' . $planToken . '</info>');
+				$this->onPlanFinished($planToken);
 				$response->end();
 				return;
 			}
@@ -152,6 +145,34 @@ class Runner extends Server
 
 	    $response->writeHead(404, array('Content-Type' => 'text/plain'));
 	    $response->end("ftrftrftr");
+	}
+
+	public function dispatchPlan()
+	{
+		if (empty($this->executionPlans)) {
+			return [];
+		}
+
+		$data = [];
+
+		$plans = array_shift($this->executionPlans);
+		$this->dispatchedCount++;
+		$planToken = $this->dispatchedCount;
+		$this->dispatchedPlans[$planToken] = [
+			'dispatchedAt' => time(),
+			'plans' => $plans
+		];
+		$this->log('<info>>>> Dispatiching plan ' . $planToken . '</info>');
+		$data['planToken'] = $planToken;
+		$data['plans'] = ExecutionPlanHelper::serializeSequence($plans);
+
+		return $data;
+	}
+
+	public function onPlanFinished($planToken)
+	{
+		$this->log('<info><<< Finished plan ' . $planToken . '</info>');
+		unset($this->dispatchedPlans[$planToken]);
 	}
 
 	public function tick()
@@ -165,13 +186,24 @@ class Runner extends Server
 		$this->spawnedClients = $remainingClients;
 
 		while (count($this->spawnedClients) < $this->maxProcesses && !empty($this->executionPlans)) {
-			$this->log('<info>Spawning a new client.</info>');
 			$this->spawnClient();
 		}
+
+		if (empty($this->dispatchedPlans) && empty($this->executionPlans)) {
+			$this->done();
+		}
+	}
+
+	public function done()
+	{
+		$this->loop->stop();
+		$this->log('Done!');
 	}
 
 	public function spawnClient()
 	{
+		$this->log('<info>### Spawning a new client.</info>');
+
 		$pathToWorker = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'worker';
 
 		if (!is_file($pathToWorker)) {
