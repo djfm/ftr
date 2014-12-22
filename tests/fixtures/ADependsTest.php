@@ -7,29 +7,29 @@ use Exception;
 
 class ADependsTest extends PHPUnit_Framework_TestCase
 {
-	public function testA()
-	{
-		return 42;
-	}
+    public function testA()
+    {
+        return 42;
+    }
 
-	/**
+    /**
 	 * @depends testA
 	 */
-	public function testB($a)
-	{
-		$this->assertEquals(42, $a);
-	}
+    public function testB($a)
+    {
+        $this->assertEquals(42, $a);
+    }
 
-	public function testC()
-	{
-		throw new Exception("Na na na.");
-	}
+    public function testC()
+    {
+        throw new Exception("Na na na.");
+    }
 
-	/**
+    /**
 	 * @depends testC
 	 */
-	public function testD($c)
-	{
-		
-	}
+    public function testD($c)
+    {
+
+    }
 }

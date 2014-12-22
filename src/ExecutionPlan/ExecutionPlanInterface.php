@@ -7,8 +7,8 @@ use djfm\ftr\Reporter;
 
 interface ExecutionPlanInterface extends ArraySerializableInterface
 {
-	public function run();
-	public function getTestsCount();
+    public function run();
+    public function getTestsCount();
 
-	public function setReporter(Reporter $reporter);
+    public function setReporter(Reporter $reporter);
 }

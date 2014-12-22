@@ -8,192 +8,193 @@ use Exception;
 
 class TestMethod implements TestInterface
 {
-	private $inputArguments = [];
-	private $classFilePath;
-	private $className;
-	private $executionPlan;
-	private $expectedInputArgumentNames;
-	private $name;
-	private $dependencies = [];
-	private $expectedException;
+    private $inputArguments = [];
+    private $classFilePath;
+    private $className;
+    private $executionPlan;
+    private $expectedInputArgumentNames;
+    private $name;
+    private $dependencies = [];
+    private $expectedException;
 
-	public function setClassFilePath($path)
-	{
-		$this->classFilePath = $path;
+    public function setClassFilePath($path)
+    {
+        $this->classFilePath = $path;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function setClassName($name)
-	{
-		$this->className = $name;
+    public function setClassName($name)
+    {
+        $this->className = $name;
 
-		return $this;
-	}
-	
-	public function setExecutionPlan(TestClassExecutionPlan $plan)
-	{
-		$this->executionPlan = $plan;
+        return $this;
+    }
 
-		return $this;
-	}
+    public function setExecutionPlan(TestClassExecutionPlan $plan)
+    {
+        $this->executionPlan = $plan;
 
-	public function getExpectedInputArgumentNames()
-	{
-		return $this->expectedInputArgumentNames;
-	}
+        return $this;
+    }
 
-	public function setExpectedInputArgumentNames(array $names)
-	{
-		$this->expectedInputArgumentNames = $names;
+    public function getExpectedInputArgumentNames()
+    {
+        return $this->expectedInputArgumentNames;
+    }
 
-		return $this;
-	}
+    public function setExpectedInputArgumentNames(array $names)
+    {
+        $this->expectedInputArgumentNames = $names;
 
-	public function setName($name)
-	{
-		$this->name = $name;
+        return $this;
+    }
 
-		return $this;
-	}
+    public function setName($name)
+    {
+        $this->name = $name;
 
-	public function setInputArgumentValue($argumentName, $value)
-	{
-		$this->inputArguments[$argumentName] = $value;
-		return $this;
-	}
+        return $this;
+    }
 
-	public function setDataProviderArguments(array $args)
-	{
-		foreach ($args as $pos => $value) {
-			$this->setInputArgumentValue($this->expectedInputArgumentNames[$pos], $value);
-		}
-	}
+    public function setInputArgumentValue($argumentName, $value)
+    {
+        $this->inputArguments[$argumentName] = $value;
 
-	public function setDependency($argumentName, $testName)
-	{
-		$this->dependencies[$argumentName] = $testName;
+        return $this;
+    }
 
-		return $this;
-	}
+    public function setDataProviderArguments(array $args)
+    {
+        foreach ($args as $pos => $value) {
+            $this->setInputArgumentValue($this->expectedInputArgumentNames[$pos], $value);
+        }
+    }
 
-	public function setDependencies(array $deps)
-	{
-		$this->dependencies = $deps;
+    public function setDependency($argumentName, $testName)
+    {
+        $this->dependencies[$argumentName] = $testName;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function setExpectedException($expectedException)
-	{
-		$this->expectedException = $expectedException;
+    public function setDependencies(array $deps)
+    {
+        $this->dependencies = $deps;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function getDependencies()
-	{
-		return $this->dependencies;
-	}
+    public function setExpectedException($expectedException)
+    {
+        $this->expectedException = $expectedException;
 
-	public function run()
-	{
-		$arguments = [];
+        return $this;
+    }
 
-		foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
-			if (array_key_exists($argumentName, $this->getDependencies())) {
-				$dependsOn = $this->getDependencies()[$argumentName];
-				if ($this->executionPlan->hasValue($dependsOn)) {
-					$arguments[] = $this->executionPlan->getValue($dependsOn);
-				} else {
-					return 'skipped';
-				}
-			} elseif (array_key_exists($argumentName, $this->inputArguments)) {
-				$arguments[] = $this->inputArguments[$argumentName];
-			} else {
-				throw new Exception("No argument value found for `$argumentName`.");
-			}
-		}
+    public function getDependencies()
+    {
+        return $this->dependencies;
+    }
 
-		$instance = $this->executionPlan->makeInstance();
+    public function run()
+    {
+        $arguments = [];
 
-		$before = [$instance, 'setUp'];
-		$after 	= [$instance, 'tearDown'];
+        foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
+            if (array_key_exists($argumentName, $this->getDependencies())) {
+                $dependsOn = $this->getDependencies()[$argumentName];
+                if ($this->executionPlan->hasValue($dependsOn)) {
+                    $arguments[] = $this->executionPlan->getValue($dependsOn);
+                } else {
+                    return 'skipped';
+                }
+            } elseif (array_key_exists($argumentName, $this->inputArguments)) {
+                $arguments[] = $this->inputArguments[$argumentName];
+            } else {
+                throw new Exception("No argument value found for `$argumentName`.");
+            }
+        }
 
-		$beforeOK = true;
-		if (is_callable($before)) {
-			try {
-				$before();
-			} catch (Exception $e) {
-				$beforeOK = false;
-			}
-		}
+        $instance = $this->executionPlan->makeInstance();
 
-		$testOK = false;
-		if ($beforeOK) {
-			try {
-				$value = call_user_func_array([$instance, $this->name], $arguments);
-				$this->executionPlan->setValue($this->name, $value);
-				$testOK = true;
-			} catch (Exception $e) {
-				if ($this->expectedException && $e instanceof $this->expectedException) {
-					$testOK = true;
-				}
-			}
-		}
+        $before = [$instance, 'setUp'];
+        $after    = [$instance, 'tearDown'];
 
-		$afterOK = true;
-		if (is_callable($after)) {
-			try {
-				$after();
-			} catch (Exception $e) {
-				$afterOK = false;
-			}
-		}
+        $beforeOK = true;
+        if (is_callable($before)) {
+            try {
+                $before();
+            } catch (Exception $e) {
+                $beforeOK = false;
+            }
+        }
 
-		if ($beforeOK && $afterOK) {
-			if ($testOK) {
-				return 'ok';
-			} else {
-				return 'ko';
-			}
-		} else {
-			return 'error';
-		}
-	}
+        $testOK = false;
+        if ($beforeOK) {
+            try {
+                $value = call_user_func_array([$instance, $this->name], $arguments);
+                $this->executionPlan->setValue($this->name, $value);
+                $testOK = true;
+            } catch (Exception $e) {
+                if ($this->expectedException && $e instanceof $this->expectedException) {
+                    $testOK = true;
+                }
+            }
+        }
 
-	public function getTestIdentifier()
-	{
-		return $this->className . '::' . $this->name;
-	}
+        $afterOK = true;
+        if (is_callable($after)) {
+            try {
+                $after();
+            } catch (Exception $e) {
+                $afterOK = false;
+            }
+        }
 
-	/**
+        if ($beforeOK && $afterOK) {
+            if ($testOK) {
+                return 'ok';
+            } else {
+                return 'ko';
+            }
+        } else {
+            return 'error';
+        }
+    }
+
+    public function getTestIdentifier()
+    {
+        return $this->className . '::' . $this->name;
+    }
+
+    /**
 	 * Methods from ArraySerializableInterface
 	 */
 
-	public function toArray()
-	{
-		return [
-			'classFilePath' => $this->classFilePath,
-			'className' => $this->className,
-			'expectedInputArgumentNames' => $this->expectedInputArgumentNames,
-			'name' => $this->name,
-			'dependencies' => $this->dependencies,
-			'inputArguments' => $this->inputArguments,
-			'expectedException' => $this->expectedException
-		];
-	}
+    public function toArray()
+    {
+        return [
+            'classFilePath' => $this->classFilePath,
+            'className' => $this->className,
+            'expectedInputArgumentNames' => $this->expectedInputArgumentNames,
+            'name' => $this->name,
+            'dependencies' => $this->dependencies,
+            'inputArguments' => $this->inputArguments,
+            'expectedException' => $this->expectedException
+        ];
+    }
 
-	public function fromArray(array $arr)
-	{
-		$this->classFilePath = $arr['classFilePath'];
-		$this->className = $arr['className'];
-		$this->expectedInputArgumentNames = $arr['expectedInputArgumentNames'];
-		$this->name = $arr['name'];
-		$this->dependencies = $arr['dependencies'];
-		$this->inputArguments = $arr['inputArguments'];
-		$this->expectedException = $arr['expectedException'];
+    public function fromArray(array $arr)
+    {
+        $this->classFilePath = $arr['classFilePath'];
+        $this->className = $arr['className'];
+        $this->expectedInputArgumentNames = $arr['expectedInputArgumentNames'];
+        $this->name = $arr['name'];
+        $this->dependencies = $arr['dependencies'];
+        $this->inputArguments = $arr['inputArguments'];
+        $this->expectedException = $arr['expectedException'];
 
-		return $this;
-	}
+        return $this;
+    }
 }

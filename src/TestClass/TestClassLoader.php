@@ -57,7 +57,7 @@ class TestClassLoader implements LoaderInterface
 
         $executionPlan = new TestClassExecutionPlan();
         $executionPlan->setClassFilePath($filePath)->setClassName($className);
-        
+
         $refl = new ReflectionClass($className);
 
         foreach ($refl->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {

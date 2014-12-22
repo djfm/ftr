@@ -11,248 +11,250 @@ use djfm\ftr\Reporter;
 
 class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterface
 {
-	private $testables = [];
+    private $testables = [];
 
-	private $classFilePath;
-	private $className;
-	private $isExecutionPlan = false;
-	private $reporter;
+    private $classFilePath;
+    private $className;
+    private $isExecutionPlan = false;
+    private $reporter;
 
-	private $values = [];
+    private $values = [];
 
-	public function setClassFilePath($path)
-	{
-		$this->classFilePath = $path;
+    public function setClassFilePath($path)
+    {
+        $this->classFilePath = $path;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function setClassName($name)
-	{
-		$this->className = $name;
+    public function setClassName($name)
+    {
+        $this->className = $name;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	private function shallowClone()
-	{
-		$clone = new static();
-		$clone->setClassFilePath($this->classFilePath);
-		$clone->setClassName($this->className);
+    private function shallowClone()
+    {
+        $clone = new static();
+        $clone->setClassFilePath($this->classFilePath);
+        $clone->setClassName($this->className);
 
-		return $clone;
-	}
+        return $clone;
+    }
 
-	public function getExecutionPlans()
-	{
-		$seqOfParMethods = array_map(function ($testable) {
-			if (is_array($testable)) {
-				return $testable;
-			} else {
-				return [$testable];
-			}
-		}, $this->testables);
+    public function getExecutionPlans()
+    {
+        $seqOfParMethods = array_map(function ($testable) {
+            if (is_array($testable)) {
+                return $testable;
+            } else {
+                return [$testable];
+            }
+        }, $this->testables);
 
-		$pars = [[]];
+        $pars = [[]];
 
-		foreach ($seqOfParMethods as $parMethods) {
-			$newPars = [];
-			foreach ($pars as $sequenceSoFar) {
-				foreach ($parMethods as $method) {
-					$seq = $sequenceSoFar;
-					$seq[] = clone $method;
-					$newPars[] = $seq;
-				}
-			}
-			$pars = $newPars;
-		}
+        foreach ($seqOfParMethods as $parMethods) {
+            $newPars = [];
+            foreach ($pars as $sequenceSoFar) {
+                foreach ($parMethods as $method) {
+                    $seq = $sequenceSoFar;
+                    $seq[] = clone $method;
+                    $newPars[] = $seq;
+                }
+            }
+            $pars = $newPars;
+        }
 
-		return array_map(function ($testables) {
-			$plan = $this->shallowClone();
-			$plan->isExecutionPlan = true;
-			foreach ($testables as $testable) {
-				$plan->addTestMethod($testable);
-			}
-			return [$plan];
-		}, $pars);
-	}
+        return array_map(function ($testables) {
+            $plan = $this->shallowClone();
+            $plan->isExecutionPlan = true;
+            foreach ($testables as $testable) {
+                $plan->addTestMethod($testable);
+            }
 
-	public function getTestable($n)
-	{
-		return $this->testables[$n];
-	}
+            return $plan;
+        }, $pars);
+    }
 
-	public function setValue($testName, $value)
-	{
-		$this->values[$testName] = $value;
+    public function getTestable($n)
+    {
+        return $this->testables[$n];
+    }
 
-		return $this;
-	}
+    public function setValue($testName, $value)
+    {
+        $this->values[$testName] = $value;
 
-	public function hasValue($testName)
-	{
-		return array_key_exists($testName, $this->values);
-	}
+        return $this;
+    }
 
-	public function getValue($testName)
-	{
-		if (!$this->hasValue($testName)) {
-			throw new Exception("No recorded value for `$testName`.");
-		}
+    public function hasValue($testName)
+    {
+        return array_key_exists($testName, $this->values);
+    }
 
-		return $this->values[$testName];
-	}
+    public function getValue($testName)
+    {
+        if (!$this->hasValue($testName)) {
+            throw new Exception("No recorded value for `$testName`.");
+        }
 
-	public function runBefore()
-	{
-		if (!$this->isExecutionPlan) {
-			throw new NotAnExecutionPlanException();
-		}
+        return $this->values[$testName];
+    }
 
-		try {
-			$this->call('setUpBeforeClass');
-		} catch (ReflectionException $e) {
-			// ok
-		}
-	}
+    public function runBefore()
+    {
+        if (!$this->isExecutionPlan) {
+            throw new NotAnExecutionPlanException();
+        }
 
-	public function run()
-	{
-		if (!$this->isExecutionPlan) {
-			throw new NotAnExecutionPlanException();
-		}
+        try {
+            $this->call('setUpBeforeClass');
+        } catch (ReflectionException $e) {
+            // ok
+        }
+    }
 
-		$beforeOK = true;
-		try {
-			$this->runBefore();
-		} catch (Exception $e) {
-			$beforeOK = false;
-		}
+    public function run()
+    {
+        if (!$this->isExecutionPlan) {
+            throw new NotAnExecutionPlanException();
+        }
 
-		foreach ($this->testables as $test) {
-			if ($beforeOK) {
-				$this->reporter->start($test);
-				$status = $test->run();
-				$this->reporter->end($test, $status);
-			} else {
-				$this->reporter->end($test, 'skipped');
-			}
-		}
+        $beforeOK = true;
+        try {
+            $this->runBefore();
+        } catch (Exception $e) {
+            $beforeOK = false;
+        }
 
-		$afterOK = true;
-		try {
-			$this->runAfter();
-		} catch (Exception $e) {
-			$afterOK = false;
-		}
+        foreach ($this->testables as $test) {
+            if ($beforeOK) {
+                $this->reporter->start($test);
+                $status = $test->run();
+                $this->reporter->end($test, $status);
+            } else {
+                $this->reporter->end($test, 'skipped');
+            }
+        }
 
-		return $beforeOK && $afterOK;
-	}
+        $afterOK = true;
+        try {
+            $this->runAfter();
+        } catch (Exception $e) {
+            $afterOK = false;
+        }
 
-	public function runAfter()
-	{
-		if (!$this->isExecutionPlan) {
-			throw new NotAnExecutionPlanException();
-		}
+        return $beforeOK && $afterOK;
+    }
 
-		try {
-			$this->call('tearDownAfterClass');
-		} catch (ReflectionException $e) {
-			// ok
-		}
-	}
+    public function runAfter()
+    {
+        if (!$this->isExecutionPlan) {
+            throw new NotAnExecutionPlanException();
+        }
 
-	public function addTestMethod(TestMethod $testMethod)
-	{
-		$this->testables[] = $testMethod;
-		$testMethod->setExecutionPlan($this);
+        try {
+            $this->call('tearDownAfterClass');
+        } catch (ReflectionException $e) {
+            // ok
+        }
+    }
 
-		return $this;
-	}
+    public function addTestMethod(TestMethod $testMethod)
+    {
+        $this->testables[] = $testMethod;
+        $testMethod->setExecutionPlan($this);
 
-	public function addTestMethods(array $testMethods)
-	{
-		$this->testables[] = $testMethods;
+        return $this;
+    }
 
-		return $this;
-	}
+    public function addTestMethods(array $testMethods)
+    {
+        $this->testables[] = $testMethods;
 
-	public function getTestsCount()
-	{
-		$n = 0;
-		foreach ($this->testables as $testable) {
-			if (is_array($testable)) {
-				$n += count($testable);
-			} else {
-				$n += 1;
-			}
-		}
+        return $this;
+    }
 
-		return $n;
-	}
+    public function getTestsCount()
+    {
+        $n = 0;
+        foreach ($this->testables as $testable) {
+            if (is_array($testable)) {
+                $n += count($testable);
+            } else {
+                $n += 1;
+            }
+        }
 
-	public function makeInstance()
-	{
-		if (!class_exists($this->className)) {
-			$this->includeClassFile();
-		}
-		return new $this->className;
-	}
+        return $n;
+    }
 
-	public function call($name, array $arguments = array())
-	{
-		if (!class_exists($this->className)) {
-			$this->includeClassFile();
-		}
-		$refl = new ReflectionClass($this->className);
-		$method = $refl->getMethod($name);
+    public function makeInstance()
+    {
+        if (!class_exists($this->className)) {
+            $this->includeClassFile();
+        }
 
-		$mThis = null;
-		if (!$method->isStatic()) {
-			$mThis = new $this->className;
-		}
+        return new $this->className();
+    }
 
-		return $method->invokeArgs($mThis, $arguments);
-	}
+    public function call($name, array $arguments = array())
+    {
+        if (!class_exists($this->className)) {
+            $this->includeClassFile();
+        }
+        $refl = new ReflectionClass($this->className);
+        $method = $refl->getMethod($name);
 
-	public function includeClassFile()
-	{
-		include $this->classFilePath;
-	}
+        $mThis = null;
+        if (!$method->isStatic()) {
+            $mThis = new $this->className();
+        }
 
-	public function toArray()
-	{
-		$testables = array_map(function ($testable) {
-			return $testable->toArray();
-		}, $this->testables);
+        return $method->invokeArgs($mThis, $arguments);
+    }
 
-		return [
-			'testables' => $testables,
-			'classFilePath' => $this->classFilePath,
-			'className' => $this->className,
-			'isExecutionPlan' => $this->isExecutionPlan
-		];
-	}
+    public function includeClassFile()
+    {
+        include $this->classFilePath;
+    }
 
-	public function fromArray(array $arr)
-	{
-		foreach ($arr['testables'] as $testable) {
-			$testMethod = new TestMethod();
-			$testMethod->fromArray($testable);
-			$this->addTestMethod($testMethod);
-		}
+    public function toArray()
+    {
+        $testables = array_map(function ($testable) {
+            return $testable->toArray();
+        }, $this->testables);
 
-		$this->classFilePath = $arr['classFilePath'];
-		$this->className = $arr['className'];
-		$this->isExecutionPlan = $arr['isExecutionPlan'];
+        return [
+            'testables' => $testables,
+            'classFilePath' => $this->classFilePath,
+            'className' => $this->className,
+            'isExecutionPlan' => $this->isExecutionPlan
+        ];
+    }
 
-		return $this;
-	}
+    public function fromArray(array $arr)
+    {
+        foreach ($arr['testables'] as $testable) {
+            $testMethod = new TestMethod();
+            $testMethod->fromArray($testable);
+            $this->addTestMethod($testMethod);
+        }
 
-	public function setReporter(Reporter $reporter)
-	{
-		$this->reporter = $reporter;
+        $this->classFilePath = $arr['classFilePath'];
+        $this->className = $arr['className'];
+        $this->isExecutionPlan = $arr['isExecutionPlan'];
 
-		return $this;
-	}
+        return $this;
+    }
+
+    public function setReporter(Reporter $reporter)
+    {
+        $this->reporter = $reporter;
+
+        return $this;
+    }
 }

@@ -6,5 +6,5 @@ use Exception;
 
 class CouldNotConnectToServerException extends Exception
 {
-	
+
 }

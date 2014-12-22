@@ -6,13 +6,13 @@ use Exception;
 
 class ASimpleFailingTest
 {
-	public function testA()
-	{
-		throw new Exception('Loupé !'); 
-	}
+    public function testA()
+    {
+        throw new Exception('Loupé !');
+    }
 
-	public function testB()
-	{
-		
-	}
+    public function testB()
+    {
+
+    }
 }

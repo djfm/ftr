@@ -4,34 +4,34 @@ namespace djfm\ftr\tests\fixtures;
 
 class ASimpleDependsTest
 {
-	public function testA()
-	{
+    public function testA()
+    {
 
-	}
+    }
 
-	/**
+    /**
 	 * @depends testA
 	 */
-	public function testB($a)
-	{
+    public function testB($a)
+    {
 
-	}
+    }
 
-	/**
+    /**
 	 * @depends testA
 	 * @depends testB
 	 */
-	public function testC($a, $b)
-	{
+    public function testC($a, $b)
+    {
 
-	}
+    }
 
-	/**
+    /**
 	 * @depends testB
 	 * @depends testA
 	 */
-	public function testD($b, $a)
-	{
+    public function testD($b, $a)
+    {
 
-	}
+    }
 }

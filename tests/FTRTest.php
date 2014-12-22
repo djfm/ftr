@@ -5,90 +5,88 @@ namespace djfm\ftr\tests;
 use Exception;
 
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\StringInput;
-use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 
 use djfm\ftr\app\Command\RunCommand;
 
 class FTRTest extends \PHPUnit_Framework_TestCase
 {
-	public function executeRun(array $options)
-	{
-		$application = new Application();
-		$application->add(new RunCommand());
+    public function executeRun(array $options)
+    {
+        $application = new Application();
+        $application->add(new RunCommand());
 
-		$command = $application->find('run');
-		$commandTester = new CommandTester($command);
-		
-		$defaults = [
-			'command' => $command->getName()
-		];
+        $command = $application->find('run');
+        $commandTester = new CommandTester($command);
 
-		$commandTester->execute(array_merge($defaults, $options));
+        $defaults = [
+            'command' => $command->getName()
+        ];
 
-		$res = $command->getLastRunData();
+        $commandTester->execute(array_merge($defaults, $options));
 
-		if (!is_array($res)) {
-			throw new Exception("Seems like the command failed to run.\n".$commandTester->getDisplay());
-		}
+        $res = $command->getLastRunData();
 
-		return $res;
-	}
+        if (!is_array($res)) {
+            throw new Exception("Seems like the command failed to run.\n".$commandTester->getDisplay());
+        }
 
-	public function testAFailureAndAnOK()
-	{
-		$res = $this->executeRun(['test' => __DIR__ . '/fixtures/ASimpleFailingTest.php']);
+        return $res;
+    }
 
-		$this->assertArrayHasKey('summary', $res);
+    public function testAFailureAndAnOK()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/ASimpleFailingTest.php']);
 
-		$this->assertEquals([
-			'ok' => 1,
-			'ko' => 1,
-			'skipped' => 0,
-			'unknown' => 0
-		], $res['summary']);
-	}
+        $this->assertArrayHasKey('summary', $res);
 
-	public function testADataProvider()
-	{
-		$res = $this->executeRun(['test' => __DIR__ . '/fixtures/ADataProviderTest.php', '--processes' => 4]);
+        $this->assertEquals([
+            'ok' => 1,
+            'ko' => 1,
+            'skipped' => 0,
+            'unknown' => 0
+        ], $res['summary']);
+    }
 
-		$this->assertArrayHasKey('summary', $res);
+    public function testADataProvider()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/ADataProviderTest.php', '--processes' => 4]);
 
-		$this->assertEquals([
-			'ok' => 3,
-			'ko' => 0,
-			'skipped' => 0,
-			'unknown' => 0
-		], $res['summary']);
-	}
+        $this->assertArrayHasKey('summary', $res);
 
-	public function testADepends()
-	{
-		$res = $this->executeRun(['test' => __DIR__ . '/fixtures/ADependsTest.php']);
+        $this->assertEquals([
+            'ok' => 3,
+            'ko' => 0,
+            'skipped' => 0,
+            'unknown' => 0
+        ], $res['summary']);
+    }
 
-		$this->assertArrayHasKey('summary', $res);
+    public function testADepends()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/ADependsTest.php']);
 
-		$this->assertEquals([
-			'ok' => 2,
-			'ko' => 1,
-			'skipped' => 1,
-			'unknown' => 0
-		], $res['summary']);
-	}
+        $this->assertArrayHasKey('summary', $res);
 
-	public function testAMiscTest()
-	{
-		$res = $this->executeRun(['test' => __DIR__ . '/fixtures/AMiscTest.php']);
+        $this->assertEquals([
+            'ok' => 2,
+            'ko' => 1,
+            'skipped' => 1,
+            'unknown' => 0
+        ], $res['summary']);
+    }
 
-		$this->assertArrayHasKey('summary', $res);
+    public function testAMiscTest()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/AMiscTest.php']);
 
-		$this->assertEquals([
-			'ok' => 1,
-			'ko' => 0,
-			'skipped' => 0,
-			'unknown' => 0
-		], $res['summary']);
-	}
+        $this->assertArrayHasKey('summary', $res);
+
+        $this->assertEquals([
+            'ok' => 1,
+            'ko' => 0,
+            'skipped' => 0,
+            'unknown' => 0
+        ], $res['summary']);
+    }
 }

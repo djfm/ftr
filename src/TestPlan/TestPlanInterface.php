@@ -2,14 +2,12 @@
 
 namespace djfm\ftr\TestPlan;
 
-use djfm\ftr\Exception\TestPlanException;
-
 interface TestPlanInterface
 {
-	/**
-	 * @return array [seq, seq, seq] where seq is an array of Execution Plans
+    /**
+	 * @return array [p1, p2, p3, ...] where p* is an ExecutionPlan
 	 */
-	public function getExecutionPlans();
-		
-	public function getTestsCount();
+    public function getExecutionPlans();
+
+    public function getTestsCount();
 }

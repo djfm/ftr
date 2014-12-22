@@ -4,23 +4,23 @@ namespace djfm\ftr\TestPlan;
 
 class ParallelTestPlan implements TestPlanInterface
 {
-	use TestPlanTrait;
-	
-	private $plans = [];
+    use TestPlanTrait;
 
-	public function addTestPlan(TestPlanInterface $plan)
-	{
-		$this->plans[] = $plan;
+    private $plans = [];
 
-		return $this;
-	}
+    public function addTestPlan(TestPlanInterface $plan)
+    {
+        $this->plans[] = $plan;
 
-	public function getExecutionPlans()
-	{
-		$para = array_map(function ($plan) {
-			return $plan->getExecutionPlans();
-		}, $this->plans);
+        return $this;
+    }
 
-		return call_user_func_array('array_merge', $para);
-	}
+    public function getExecutionPlans()
+    {
+        $para = array_map(function ($plan) {
+            return $plan->getExecutionPlans();
+        }, $this->plans);
+
+        return call_user_func_array('array_merge', $para);
+    }
 }
