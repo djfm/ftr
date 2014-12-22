@@ -105,7 +105,8 @@ class Runner extends Server
 
 	public function log($data)
 	{
-		$this->writeln($data);
+		$time = '<comment>[' . date('d M Y H:i:s') . ']</comment>';
+		$this->writeln($time . ' ' . $data);
 
 		return $this;
 	}
@@ -140,11 +141,43 @@ class Runner extends Server
 				$this->onPlanFinished($planToken);
 				$response->end();
 				return;
+			} else if ($path === '/messages') {
+				//print_r($request);
+				$stream = fopen('php://temp', 'r+');
+				$buffer = new \React\Stream\Buffer($stream, $this->loop);
+				$request->pipe($buffer)->on('close', function () use ($stream) {
+					rewind($stream);
+					$json = stream_get_contents($stream);
+					$data = json_decode($json, true);
+					$this->handleMessage($data);
+				});
+				$response->writeHead(200, array('Content-Type' => 'text/plain'));
+				$response->end();
+				return;
 			}
 		}
 
 	    $response->writeHead(404, array('Content-Type' => 'text/plain'));
 	    $response->end("ftrftrftr");
+	}
+
+	public function handleMessage(array $message)
+	{
+		if ($message['type'] === 'testStart') {
+			$this->log('+++ Starting test  `' . $message['testIdentifier'] . '`');
+		} elseif ($message['type'] === 'testEnd') {
+			$status = $message['status'];
+
+			if ($status === 'ok') {
+				$statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
+			} elseif ($status === 'ko') {
+				$statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
+			} else {
+				$statusSymbol = '???';
+			}
+
+			$this->log($statusSymbol . ' Done with test `' . $message['testIdentifier'] . '`');
+		}
 	}
 
 	public function dispatchPlan()
@@ -162,7 +195,7 @@ class Runner extends Server
 			'dispatchedAt' => time(),
 			'plans' => $plans
 		];
-		$this->log('<info>>>> Dispatiching plan ' . $planToken . '</info>');
+		$this->log('<comment>>>> Dispatching plan ' . $planToken . '</comment>');
 		$data['planToken'] = $planToken;
 		$data['plans'] = ExecutionPlanHelper::serializeSequence($plans);
 
@@ -171,7 +204,7 @@ class Runner extends Server
 
 	public function onPlanFinished($planToken)
 	{
-		$this->log('<info><<< Finished plan ' . $planToken . '</info>');
+		$this->log('<comment><<< Finished plan ' . $planToken . '</comment>');
 		unset($this->dispatchedPlans[$planToken]);
 	}
 
@@ -202,7 +235,7 @@ class Runner extends Server
 
 	public function spawnClient()
 	{
-		$this->log('<info>### Spawning a new client.</info>');
+		$this->log('<comment>### Spawning a new client.</comment>');
 
 		$pathToWorker = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'worker';
 

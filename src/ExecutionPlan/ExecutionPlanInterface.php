@@ -3,11 +3,12 @@
 namespace djfm\ftr\ExecutionPlan;
 
 use djfm\ftr\Helper\ArraySerializableInterface;
+use djfm\ftr\Reporter;
 
 interface ExecutionPlanInterface extends ArraySerializableInterface
 {
-	public function runBefore();
 	public function run();
-	public function runAfter();
 	public function getTestsCount();
+
+	public function setReporter(Reporter $reporter);
 }

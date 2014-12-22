@@ -2,10 +2,12 @@
 
 namespace djfm\ftr\TestClass;
 
-use ReflectionClass;
+use ReflectionClass, Exception, ReflectionException;
+
 use djfm\ftr\Exception\NotAnExecutionPlanException;
 use djfm\ftr\ExecutionPlan\ExecutionPlanInterface;
 use djfm\ftr\TestPlan\TestPlanInterface;
+use djfm\ftr\Reporter;
 
 class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterface
 {
@@ -14,6 +16,9 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 	private $classFilePath;
 	private $className;
 	private $isExecutionPlan = false;
+	private $reporter;
+
+	private $values = [];
 
 	public function setClassFilePath($path)
 	{
@@ -77,10 +82,37 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		return $this->testables[$n];
 	}
 
+	public function setValue($testName, $value)
+	{
+		$this->values[$testName] = $value;
+
+		return $this;
+	}
+
+	public function hasValue($testName)
+	{
+		return array_key_exists($testName, $this->values);
+	}
+
+	public function getValue($testName)
+	{
+		if (!$this->hasValue($testName)) {
+			throw new Exception("No recorded value for `$testName`.");
+		}
+
+		return $this->values[$testName];
+	}
+
 	public function runBefore()
 	{
 		if (!$this->isExecutionPlan) {
 			throw new NotAnExecutionPlanException();
+		}
+
+		try {
+			$this->call('setUpBeforeClass');
+		} catch (ReflectionException $e) {
+			// ok
 		}
 	}
 
@@ -89,12 +121,44 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		if (!$this->isExecutionPlan) {
 			throw new NotAnExecutionPlanException();
 		}
+
+		$beforeOK = true;
+		try {
+			$this->runBefore();
+		} catch (Exception $e) {
+			$beforeOK = false;
+		}
+
+		foreach ($this->testables as $test) {
+			if ($beforeOK) {
+				$this->reporter->start($test);
+				$status = $test->run();
+				$this->reporter->end($test, $status);
+			} else {
+				$this->reporter->end($test, 'skipped');
+			}
+		}
+
+		$afterOK = true;
+		try {
+			$this->runAfter();
+		} catch (Exception $e) {
+			$afterOK = false;
+		}
+
+		return $beforeOK && $afterOK;
 	}
 
 	public function runAfter()
 	{
 		if (!$this->isExecutionPlan) {
 			throw new NotAnExecutionPlanException();
+		}
+
+		try {
+			$this->call('tearDownAfterClass');
+		} catch (ReflectionException $e) {
+			// ok
 		}
 	}
 
@@ -127,6 +191,14 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		return $n;
 	}
 
+	public function makeInstance()
+	{
+		if (!class_exists($this->className)) {
+			$this->includeClassFile();
+		}
+		return new $this->className;
+	}
+
 	public function call($name, array $arguments = array())
 	{
 		if (!class_exists($this->className)) {
@@ -157,7 +229,8 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 		return [
 			'testables' => $testables,
 			'classFilePath' => $this->classFilePath,
-			'className' => $this->className
+			'className' => $this->className,
+			'isExecutionPlan' => $this->isExecutionPlan
 		];
 	}
 
@@ -171,6 +244,14 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
 		$this->classFilePath = $arr['classFilePath'];
 		$this->className = $arr['className'];
+		$this->isExecutionPlan = $arr['isExecutionPlan'];
+
+		return $this;
+	}
+
+	public function setReporter(Reporter $reporter)
+	{
+		$this->reporter = $reporter;
 
 		return $this;
 	}

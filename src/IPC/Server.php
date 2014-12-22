@@ -14,6 +14,8 @@ class Server
 	private $server;
 	private $address;
 
+	protected $loop;
+
 	public function bind($ip = 'localhost', $port = 1024, $maxPort = 2048)
 	{
 		$loop = EventLoopFactory::create();

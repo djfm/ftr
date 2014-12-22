@@ -27,7 +27,7 @@ class Client
 
 	public function post($path = '/', array $payload = null)
 	{
-		return $this->request('POST', $path);
+		return $this->request('POST', $path, $payload);
 	}
 
 	private function request($method, $path, array $payload = null)
@@ -43,6 +43,7 @@ class Client
 		if (is_array($payload)) {
 			$json = json_encode($payload);
 			curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
 		}
 
 		curl_setopt($ch, CURLOPT_HEADER, true); 
