@@ -116,6 +116,11 @@ class TestClassLoader implements LoaderInterface
             }
         }
 
+        if ($dcp->hasOption('expectedException')) {
+            $expectedException = $dcp->getOption('expectedException');
+            $testMethod->setExpectedException($expectedException);
+        }
+
         return $testMethod;
     }
 }

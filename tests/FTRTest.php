@@ -77,4 +77,18 @@ class FTRTest extends \PHPUnit_Framework_TestCase
 			'unknown' => 0
 		], $res['summary']);
 	}
+
+	public function testAMiscTest()
+	{
+		$res = $this->executeRun(['test' => __DIR__ . '/fixtures/AMiscTest.php']);
+
+		$this->assertArrayHasKey('summary', $res);
+
+		$this->assertEquals([
+			'ok' => 1,
+			'ko' => 0,
+			'skipped' => 0,
+			'unknown' => 0
+		], $res['summary']);
+	}
 }

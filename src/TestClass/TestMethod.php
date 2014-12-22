@@ -15,6 +15,7 @@ class TestMethod implements TestInterface
 	private $expectedInputArgumentNames;
 	private $name;
 	private $dependencies = [];
+	private $expectedException;
 
 	public function setClassFilePath($path)
 	{
@@ -29,10 +30,6 @@ class TestMethod implements TestInterface
 
 		return $this;
 	}
-
-	/**
-	 * Methods from TestInterface
-	 */
 	
 	public function setExecutionPlan(TestClassExecutionPlan $plan)
 	{
@@ -87,6 +84,13 @@ class TestMethod implements TestInterface
 		return $this;
 	}
 
+	public function setExpectedException($expectedException)
+	{
+		$this->expectedException = $expectedException;
+
+		return $this;
+	}
+
 	public function getDependencies()
 	{
 		return $this->dependencies;
@@ -132,7 +136,9 @@ class TestMethod implements TestInterface
 				$this->executionPlan->setValue($this->name, $value);
 				$testOK = true;
 			} catch (Exception $e) {
-				
+				if ($this->expectedException && $e instanceof $this->expectedException) {
+					$testOK = true;
+				}
 			}
 		}
 
@@ -173,7 +179,8 @@ class TestMethod implements TestInterface
 			'expectedInputArgumentNames' => $this->expectedInputArgumentNames,
 			'name' => $this->name,
 			'dependencies' => $this->dependencies,
-			'inputArguments' => $this->inputArguments
+			'inputArguments' => $this->inputArguments,
+			'expectedException' => $this->expectedException
 		];
 	}
 
@@ -185,6 +192,7 @@ class TestMethod implements TestInterface
 		$this->name = $arr['name'];
 		$this->dependencies = $arr['dependencies'];
 		$this->inputArguments = $arr['inputArguments'];
+		$this->expectedException = $arr['expectedException'];
 
 		return $this;
 	}
