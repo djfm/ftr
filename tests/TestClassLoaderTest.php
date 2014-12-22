@@ -37,13 +37,13 @@ class TestClassLoaderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(1, count($executionPlans));
 
-        $seq = $executionPlans[0];
+        $executionPlan = $executionPlans[0];
 
-        $jsonSeq = ExecutionPlanHelper::serializeSequence($seq);
+        $json = ExecutionPlanHelper::serialize($executionPlan);
 
-        $unserializedSeq = ExecutionPlanHelper::unSerializeSequence($jsonSeq);
+        $unserialized = ExecutionPlanHelper::unSerialize($json);
 
-        $this->assertEquals($seq[0]->toArray(), $unserializedSeq[0]->toArray());
+        $this->assertEquals($executionPlan->toArray(), $unserialized->toArray());
     }
 
     public function testLoaderFindsTestsFromAClassWithDataProviderNotParallel()

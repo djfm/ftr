@@ -144,13 +144,11 @@ class Runner extends Server
             if ($path === '/executionPlans/get') {
                 $response->writeHead(200, array('Content-Type' => 'application/json'));
                 $response->end(json_encode($this->dispatchPlan()));
-
                 return;
             } elseif (preg_match('#^/executionPlans/(\d+)/done$#', $path, $m)) {
                 $planToken = (int) $m[1];
                 $this->onPlanFinished($planToken);
                 $response->end();
-
                 return;
             } elseif ($path === '/messages') {
                 $stream = fopen('php://temp', 'r+');
@@ -163,7 +161,6 @@ class Runner extends Server
                 });
                 $response->writeHead(200, array('Content-Type' => 'text/plain'));
                 $response->end();
-
                 return;
             }
         }

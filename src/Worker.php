@@ -19,12 +19,11 @@ class Worker extends Client
     {
         $maybePlan = $this->post('/executionPlans/get');
 
-        if (isset($maybePlan['plans'])) {
-
-            $plans = ExecutionPlanHelper::unserializeSequence($maybePlan['plan']);
+        if (isset($maybePlan['plan'])) {
+            $plan = ExecutionPlanHelper::unserialize($maybePlan['plan']);
             $this->planToken = $maybePlan['planToken'];
 
-            $this->processPlans($plans);
+            $this->processPlan($plan);
         }
     }
 
