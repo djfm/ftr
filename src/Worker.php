@@ -29,7 +29,7 @@ class Worker extends Client
 
     public function processPlan(ExecutionPlanInterface $plan)
     {
-        $reporter = new Reporter($this);
+        $reporter = new Reporter($this, $this->planToken);
 
         $plan->setReporter($reporter);
 
