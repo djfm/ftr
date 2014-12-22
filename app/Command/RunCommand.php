@@ -14,6 +14,8 @@ use djfm\ftr\Runner;
 
 class RunCommand extends Command
 {
+	private $lastRunData;
+
 	protected function configure()
 	{
 		$this
@@ -46,9 +48,8 @@ class RunCommand extends Command
 		->setDataProviderFilter($input->getOption('data-provider-filter'))
 		->setOutputInterface($output)
 		;
-
 		try {
-			$runner->run();
+			$this->lastRunData = $runner->run();
 		} catch (Exception $e) {
 			$message = trim($e->getMessage());
 
@@ -58,5 +59,10 @@ class RunCommand extends Command
 
 			$output->writeln('<error>' . get_class($e) . ': ' . $message . '</error>');
 		}
+	}
+
+	public function getLastRunData()
+	{
+		return $this->lastRunData;
 	}
 }

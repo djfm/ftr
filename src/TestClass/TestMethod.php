@@ -96,7 +96,7 @@ class TestMethod implements TestInterface
 	{
 		$arguments = [];
 
-		foreach ($this->getExpectedInputArgumentNames as $argumentName) {
+		foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
 			if (array_key_exists($argumentName, $this->getDependencies())) {
 				$dependsOn = $this->getDependencies()[$argumentName];
 				if ($this->executionPlan->hasValue($dependsOn)) {

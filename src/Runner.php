@@ -27,10 +27,17 @@ class Runner extends Server
 	private $outputInterface;
 	private $executionPlans = [];
 	private $dispatchedPlans = [];
-
 	private $spawnedClients = [];
-
 	private $dispatchedCount = 0;
+
+	private $results = [
+		'summary' => [
+			'ok' => 0,
+			'ko' => 0,
+			'skipped' => 0,
+			'unknown' => 0
+		]
+	];
 
 	public function setTest($test)
 	{
@@ -121,6 +128,7 @@ class Runner extends Server
 			$this->writeln(sprintf('<info>Started test server on %s</info>', $this->getAddress()));
 			parent::run();
 		}
+		return $this->results;
 	}
 
 	public function reply($request, $response)
@@ -142,7 +150,6 @@ class Runner extends Server
 				$response->end();
 				return;
 			} else if ($path === '/messages') {
-				//print_r($request);
 				$stream = fopen('php://temp', 'r+');
 				$buffer = new \React\Stream\Buffer($stream, $this->loop);
 				$request->pipe($buffer)->on('close', function () use ($stream) {
@@ -170,10 +177,16 @@ class Runner extends Server
 
 			if ($status === 'ok') {
 				$statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
+				++$this->results['summary']['ok'];
 			} elseif ($status === 'ko') {
 				$statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
-			} else {
-				$statusSymbol = '???';
+				++$this->results['summary']['ko'];
+			} elseif ($status === 'skipped') {
+				$statusSymbol = '<fg=black;bg=yellow>xxx</fg=black;bg=yellow>';
+				++$this->results['summary']['skipped'];
+			}else {
+				$statusSymbol = '<fg=black;bg=yellow>O_o</fg=black;bg=yellow>';
+				++$this->results['summary']['unknown'];
 			}
 
 			$this->log($statusSymbol . ' Done with test `' . $message['testIdentifier'] . '`');
