@@ -171,7 +171,7 @@ class Runner extends Server
 	public function handleMessage(array $message)
 	{
 		if ($message['type'] === 'testStart') {
-			$this->log('+++ Starting test  `' . $message['testIdentifier'] . '`');
+			$this->log('<comment>...</comment> Starting test  `' . $message['testIdentifier'] . '`');
 		} elseif ($message['type'] === 'testEnd') {
 			$status = $message['status'];
 
