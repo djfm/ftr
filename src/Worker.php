@@ -13,6 +13,9 @@ class Worker extends Client
     public function setup(array $settings)
     {
         $this->setAddress($settings['serverAddress']);
+        if ($settings['bootstrap']) {
+            require_once $settings['bootstrap'];
+        }
     }
 
     public function run()

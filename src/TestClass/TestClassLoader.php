@@ -12,8 +12,21 @@ use djfm\ftr\Loader\LoaderInterface;
 
 class TestClassLoader implements LoaderInterface
 {
+    private $bootstrap = '';
+
+    public function setBootstrap($filePath)
+    {
+        $this->bootstrap = $filePath;
+
+        return $this;
+    }
+
     public function loadFile($filePath)
     {
+        if ($this->bootstrap) {
+            require_once $this->bootstrap;
+        }
+
         if (!preg_match('/[tT]est\.php$/', $filePath)) {
             return false;
         }

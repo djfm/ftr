@@ -32,6 +32,7 @@ class Runner extends Server
     private $spawnedClients = [];
     private $dispatchedCount = 0;
     private $testsCount = 0;
+    private $bootstrap = '';
 
     private $results = [
         'summary' => [
@@ -80,6 +81,13 @@ class Runner extends Server
     public function setDataProviderFilter($z)
     {
         $this->dataProviderFilter = $z;
+
+        return $this;
+    }
+
+    public function setBootstrap($path)
+    {
+        $this->bootstrap = $path;
 
         return $this;
     }
@@ -346,8 +354,6 @@ class Runner extends Server
                 }
             }
 
-            
-
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
                 $result = $finishedPlan['plan']->getTestResult($i);
 
@@ -419,7 +425,8 @@ class Runner extends Server
 
         $settings = json_encode([
             'serverAddress' => $this->getAddress(),
-            'environment' => []
+            'environment' => [],
+            'bootstrap' => $this->bootstrap
         ]);
 
         $builder = new ProcessBuilder([PHP_BINARY, $pathToWorker, $settings]);
@@ -486,6 +493,9 @@ class Runner extends Server
         $files = $this->listTestFiles();
 
         $loader = new Loader();
+
+        $loader->setBootstrap($this->bootstrap);
+
         $testPlan = new ParallelTestPlan();
         foreach ($files as $file) {
             $plan = $loader->loadFile($file);

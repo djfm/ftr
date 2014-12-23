@@ -20,6 +20,15 @@ class Loader implements LoaderInterface
         return $this;
     }
 
+    public function setBootstrap($filePath)
+    {
+        foreach ($this->loaders as $loader) {
+            $loader->setBootstrap($filePath);
+        }
+
+        return $this;
+    }
+
     public function getLoaders()
     {
         return $this->loaders;

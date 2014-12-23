@@ -32,6 +32,7 @@ class RunCommand extends Command
         ->addOption('processes', 'p', InputOption::VALUE_REQUIRED, 'Run with at most `p` parallel processes.')
         ->addOption('shallow', 's', InputOption::VALUE_NONE, 'When running tests from a folder, do not recurse.')
         ->addOption('filter', 'f', InputOption::VALUE_REQUIRED, 'Filter the tests to be run.')
+        ->addOption('bootstrap', 'b', InputOption::VALUE_REQUIRED, 'Include bootstrap file.', '')
         ->addOption('data-provider-filter', 'z', InputOption::VALUE_REQUIRED, 'Filter the data returned by data providers.')
         ;
     }
@@ -45,6 +46,7 @@ class RunCommand extends Command
         ->setMaxProcesses($input->getOption('processes'))
         ->setShallow($input->getOption('shallow'))
         ->setFilter($input->getOption('filter'))
+        ->setBootstrap($input->getOption('bootstrap'))
         ->setDataProviderFilter($input->getOption('data-provider-filter'))
         ->setOutputInterface($output)
         ;

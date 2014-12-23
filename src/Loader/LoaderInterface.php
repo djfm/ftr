@@ -10,4 +10,5 @@ interface LoaderInterface
 	 * @return mixed TestPlanInterface or false if the loader is not interested in this file.
 	 */
     public function loadFile($filePath);
+    public function setBootstrap($filePath);
 }
