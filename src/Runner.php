@@ -351,16 +351,13 @@ class Runner extends Server
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
                 $result = $finishedPlan['plan']->getTestResult($i);
 
-                if (!$result) {
-                    $unknown[] = $finishedPlan['plan']->getTest($i)->getTestIdentifier();
-                    continue;
-                }
-                
                 if (isset($result['exception'])) {
                     $this->writeln('In test `' . $result['testIdentifier'] . '`:');
                     $this->printException($result['exception'], '');
                 } elseif ($result['status'] === 'skipped') {
                     $skipped[] = $result['testIdentifier'];
+                } elseif ($result['status'] === 'unknown') {
+                    $unknown[] = $result['testIdentifier'];
                 }
             }
         }
@@ -385,7 +382,7 @@ class Runner extends Server
     public function summarizeResults()
     {
         ksort($this->finishedPlans);
-        
+
         $this->writeln("\n======================\n");
 
         $this->showErrorsSkippedAndUnknown();
