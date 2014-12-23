@@ -8,6 +8,7 @@ use djfm\ftr\Exception\NotAnExecutionPlanException;
 use djfm\ftr\ExecutionPlan\ExecutionPlanInterface;
 use djfm\ftr\TestPlan\TestPlanInterface;
 use djfm\ftr\Reporter;
+use djfm\ftr\Helper\ExceptionHelper;
 
 class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterface
 {
@@ -146,8 +147,18 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
         foreach ($this->testables as $test) {
             if ($beforeOK) {
                 $this->reporter->start($test);
-                $status = $test->run();
-                $this->reporter->end($test, ['status' => $status]);
+                $testOutput = $test->run();
+                
+                $result = [];
+
+                if ($testOutput instanceof Exception) {
+                    $result['status'] = 'ko';
+                    $result['exception'] = ExceptionHelper::toArray($testOutput);
+                } else {
+                    $result['status'] = $testOutput;
+                }
+
+                $this->reporter->end($test, $result);
             } else {
                 $this->reporter->end($test, ['status' => 'skipped']);
             }

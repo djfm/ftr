@@ -122,12 +122,15 @@ class TestMethod implements TestInterface
         $before = [$instance, 'setUp'];
         $after    = [$instance, 'tearDown'];
 
+        $testException = null;
+
         $beforeOK = true;
         if (is_callable($before)) {
             try {
                 $before();
             } catch (Exception $e) {
                 $beforeOK = false;
+                $testException = $e;
             }
         }
 
@@ -140,6 +143,8 @@ class TestMethod implements TestInterface
             } catch (Exception $e) {
                 if ($this->expectedException && $e instanceof $this->expectedException) {
                     $testOK = true;
+                } else {
+                    $testException = $e;
                 }
             }
         }
@@ -150,6 +155,9 @@ class TestMethod implements TestInterface
                 $after();
             } catch (Exception $e) {
                 $afterOK = false;
+                if (!$testException) {
+                    $testException = $e;
+                }
             }
         }
 
@@ -157,10 +165,10 @@ class TestMethod implements TestInterface
             if ($testOK) {
                 return 'ok';
             } else {
-                return 'ko';
+                return $testException;
             }
         } else {
-            return 'error';
+            return $testException;
         }
     }
 

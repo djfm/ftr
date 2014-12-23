@@ -153,16 +153,14 @@ class Runner extends Server
                 $response->end();
                 return;
             } elseif ($path === '/messages') {
-                $stream = fopen('php://temp', 'r+');
-                $buffer = new \React\Stream\Buffer($stream, $this->loop);
-                $request->pipe($buffer)->on('close', function () use ($stream) {
-                    rewind($stream);
-                    $json = stream_get_contents($stream);
-                    $data = json_decode($json, true);
-                    $this->handleMessage($data);
+                $request->on('data', function ($jsonData) use ($request, $response) {
+                    if ($jsonData) {
+                        $data = json_decode($jsonData, true);
+                        $this->handleMessage($data);
+                        $response->writeHead(200, array('Content-Type' => 'text/plain'));
+                        $response->end();
+                    }
                 });
-                $response->writeHead(200, array('Content-Type' => 'text/plain'));
-                $response->end();
                 return;
             }
         }

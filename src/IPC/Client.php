@@ -32,14 +32,16 @@ class Client
     {
         $url = rtrim($this->address, '/') . '/' . ltrim($path, '/');
         $ch = curl_init($url);
+        
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
-        }
+        }  
+
 
         if (is_array($payload)) {
-            $json = json_encode($payload);
+            $json = json_encode($payload, JSON_PRETTY_PRINT);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
         }
@@ -50,7 +52,6 @@ class Client
         $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
         $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $body = substr($response, $header_size);
-
         curl_close($ch);
 
         if (preg_match('#/json$#', $contentType)) {
