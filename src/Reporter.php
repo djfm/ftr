@@ -2,8 +2,11 @@
 
 namespace djfm\ftr;
 
+use Exception;
+
 use djfm\ftr\Test\TestInterface;
 use djfm\ftr\IPC\Client;
+use djfm\ftr\Helper\ExceptionHelper;
 
 class Reporter
 {
@@ -30,6 +33,8 @@ class Reporter
 
     public function end(TestInterface $test, array $testResult)
     {
+        $testResult['testIdentifier'] = $test->getTestIdentifier();
+
         $this->client->post('/messages', [
             'type' => 'testEnd',
             'planToken' => $this->planToken,
@@ -39,5 +44,14 @@ class Reporter
         ]);
 
         return $this;
+    }
+
+    public function exception(Exception $exception)
+    {
+        $this->client->post('/messages', [
+            'type' => 'exception',
+            'planToken' => $this->planToken,
+            'exception' => ExceptionHelper::toArray($exception)
+        ]);
     }
 }

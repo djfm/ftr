@@ -203,12 +203,20 @@ class Runner extends Server
             if (isset($message['testResult']['exception'])) {
                 $this->printException($message['testResult']['exception']);
             }
+        } elseif ($message['type'] === 'exception') {
+            if (!isset($this->dispatchedPlans[$message['planToken']]['exception'])) {
+                $this->dispatchedPlans[$message['planToken']]['exception'] = [];
+            }
+
+            $this->dispatchedPlans[$message['planToken']]['exception'][] = $message['exception'];
+            
+            $this->printException($message['exception']);
         }
     }
 
-    public function printException(array $exception)
+    public function printException(array $exception, $padding = '                       ')
     {
-        $text = ExceptionHelper::toString($exception, '                       ');
+        $text = ExceptionHelper::toString($exception, $padding);
         $this->writeln('<fg=red>' . $text . '</fg=red>');
         $this->writeln("");
 
@@ -243,6 +251,22 @@ class Runner extends Server
         $this->log('<comment><<< Finished plan ' . $planToken . '</comment>');
         $this->finishedPlans[$planToken] = $this->dispatchedPlans[$planToken];
         unset($this->dispatchedPlans[$planToken]);
+
+        $plan = $this->finishedPlans[$planToken]['plan'];
+
+        for ($i = 0; $i < $plan->getTestsCount(); ++$i) {
+            if (!$plan->getTestResult($i)) {
+
+                $test = $plan->getTest($i);
+
+                $plan->setTestResult($i, [
+                    'testIdentifier' => $test->getTestIdentifier(),
+                    'status' => 'unknown'
+                ]);
+
+                ++$this->results['summary']['unknown'];
+            }
+        }
 
         $this->spawnClients();
     }
@@ -280,14 +304,11 @@ class Runner extends Server
         $this->summarizeResults();
     }
 
-    public function summarizeResults()
+    public function showDots()
     {
-        $this->writeln("\n======================\n");
-
         foreach ($this->finishedPlans as $finishedPlan) {
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
                 $result = $finishedPlan['plan']->getTestResult($i);
-                
                 $statusChar = '?';
                 $color = 'red';
                 switch ($result['status']) {
@@ -309,6 +330,65 @@ class Runner extends Server
                 $this->write('<fg=' . $color . '>' . $statusChar . '</fg=' . $color . '>');
             }
         }
+    }
+
+    public function showErrorsSkippedAndUnknown()
+    {
+        $skipped = [];
+        $unknown = [];
+
+        foreach ($this->finishedPlans as $finishedPlan) {
+
+            if (isset($finishedPlan['exception'])) {
+                foreach ($finishedPlan['exception'] as $exception) {
+                    $this->writeln('In plan `' . $finishedPlan['plan']->getPlanIdentifier() . '`:');
+                    $this->printException($exception, '');
+                }
+            }
+
+            
+
+            for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
+                $result = $finishedPlan['plan']->getTestResult($i);
+
+                if (!$result) {
+                    $unknown[] = $finishedPlan['plan']->getTest($i)->getTestIdentifier();
+                    continue;
+                }
+                
+                if (isset($result['exception'])) {
+                    $this->writeln('In test `' . $result['testIdentifier'] . '`:');
+                    $this->printException($result['exception'], '');
+                } elseif ($result['status'] === 'skipped') {
+                    $skipped[] = $result['testIdentifier'];
+                }
+            }
+        }
+
+        if (!empty($skipped)) {
+            $this->writeln(sprintf('%d test(s) skipped:', count($skipped)));
+            foreach ($skipped as $name) {
+                $this->writeln('<fg=red>' . $name . '</fg=red>');
+            }
+            $this->writeln("");
+        }
+
+        if (!empty($unknown)) {
+            $this->writeln(sprintf('%d test(s) with unknown status:', count($unknown)));
+            foreach ($unknown as $name) {
+                $this->writeln('<fg=red>' . $name . '</fg=red>');
+            }
+            $this->writeln("");
+        }
+    }
+
+    public function summarizeResults()
+    {
+        $this->writeln("\n======================\n");
+
+        $this->showErrorsSkippedAndUnknown();
+
+        $this->showDots();
 
         echo "\n\n";
 
@@ -322,8 +402,8 @@ class Runner extends Server
                 $this->results['summary']['unknown'],
                 $this->results['summary']['ok'] > 0 ? 'green' : 'red',
                 $this->results['summary']['ko'] > 0 ? 'red' : 'green',
-                $this->results['summary']['skipped'] > 0 ? 'red' : 'black',
-                $this->results['summary']['unknown'] > 0 ? 'red' : 'black'
+                $this->results['summary']['skipped'] > 0 ? 'red' : 'green',
+                $this->results['summary']['unknown'] > 0 ? 'red' : 'green'
             )
         );
     }

@@ -103,4 +103,32 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'unknown' => 0
         ], $res['summary']);
     }
+
+    public function testFailingSetupBeforeClassSkipsAll()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/FailingSetupBeforeClassTest.php']);
+
+        $this->assertArrayHasKey('summary', $res);
+
+        $this->assertEquals([
+            'ok' => 0,
+            'ko' => 0,
+            'skipped' => 2,
+            'unknown' => 0
+        ], $res['summary']);
+    }
+
+    public function testDyingTest()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/DyingTest.php']);
+
+        $this->assertArrayHasKey('summary', $res);
+
+        $this->assertEquals([
+            'ok' => 0,
+            'ko' => 0,
+            'skipped' => 0,
+            'unknown' => 2
+        ], $res['summary']);
+    }
 }

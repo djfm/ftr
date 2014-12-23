@@ -36,6 +36,11 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
         return $this;
     }
 
+    public function getPlanIdentifier()
+    {
+        return $this->className;
+    }
+
     private function shallowClone()
     {
         $clone = new static();
@@ -83,6 +88,11 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
     public function getTestable($testNumber)
     {
         return $this->testables[$testNumber];
+    }
+
+    public function getTest($testNumber)
+    {
+        return $this->getTestable($testNumber);
     }
 
     public function setTestResult($testNumber, array $testResult)
@@ -142,6 +152,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
             $this->runBefore();
         } catch (Exception $e) {
             $beforeOK = false;
+            $this->reporter->exception($e);
         }
 
         foreach ($this->testables as $test) {
@@ -169,6 +180,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
             $this->runAfter();
         } catch (Exception $e) {
             $afterOK = false;
+            $this->reporter->exception($e);
         }
 
         return $beforeOK && $afterOK;

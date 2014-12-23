@@ -29,12 +29,14 @@ class Worker extends Client
 
     public function processPlan(ExecutionPlanInterface $plan)
     {
+        register_shutdown_function(function () {
+            $this->post('/executionPlans/'.$this->planToken.'/done');
+        });
+        
         $reporter = new Reporter($this, $this->planToken);
 
         $plan->setReporter($reporter);
 
         $plan->run();
-
-        $this->post('/executionPlans/'.$this->planToken.'/done');
     }
 }

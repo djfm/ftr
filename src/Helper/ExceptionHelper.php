@@ -29,6 +29,8 @@ class ExceptionHelper
 
         $lines[] = sprintf('At line %d in file `%s`', $exception['line'], $exception['file']);
 
+        $skipped = 0;
+
         foreach (array_reverse($exception['trace']) as $n => $t) {
 
             $n = count($exception['trace']) - $n;
