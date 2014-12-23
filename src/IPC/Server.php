@@ -60,6 +60,20 @@ class Server
         $response->end("ftrftrftr");
     }
 
+    public function drain($request, callable $callback)
+    {
+        $body = '';
+        $receivedLength = 0;
+        $contentLength = (int)$request->getHeaders()['Content-Length'];
+        $request->on('data', function ($data) use ($callback, &$body, &$receivedLength, $contentLength) {
+            $body .= $data;
+            $receivedLength += strlen($data);
+            if ($receivedLength >= $contentLength) {
+                $callback($body);
+            }
+        });
+    }
+
     public function tick()
     {
     }

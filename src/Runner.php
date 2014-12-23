@@ -13,6 +13,7 @@ use djfm\ftr\TestPlan\ParallelTestPlan;
 use djfm\ftr\IPC\Server;
 use djfm\ftr\Helper\Process as ProcessHelper;
 use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
+use djfm\ftr\Helper\ExceptionHelper;
 
 use Exception;
 
@@ -153,13 +154,11 @@ class Runner extends Server
                 $response->end();
                 return;
             } elseif ($path === '/messages') {
-                $request->on('data', function ($jsonData) use ($request, $response) {
-                    if ($jsonData) {
-                        $data = json_decode($jsonData, true);
-                        $this->handleMessage($data);
-                        $response->writeHead(200, array('Content-Type' => 'text/plain'));
-                        $response->end();
-                    }
+                $this->drain($request, function ($body) use ($response) {
+                    $data = json_decode($body, true);
+                    $this->handleMessage($data);
+                    $response->writeHead(200, array('Content-Type' => 'text/plain'));
+                    $response->end();
                 });
                 return;
             }
@@ -200,7 +199,20 @@ class Runner extends Server
             }
 
             $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
+
+            if (isset($message['testResult']['exception'])) {
+                $this->printException($message['testResult']['exception']);
+            }
         }
+    }
+
+    public function printException(array $exception)
+    {
+        $text = ExceptionHelper::toString($exception, '                       ');
+        $this->writeln('<fg=red>' . $text . '</fg=red>');
+        $this->writeln("");
+
+        return $this;
     }
 
     public function dispatchPlan()
