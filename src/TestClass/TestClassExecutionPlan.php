@@ -19,6 +19,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
     private $reporter;
 
     private $values = [];
+    private $results = [];
 
     public function setClassFilePath($path)
     {
@@ -78,9 +79,21 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
         }, $pars);
     }
 
-    public function getTestable($n)
+    public function getTestable($testNumber)
     {
-        return $this->testables[$n];
+        return $this->testables[$testNumber];
+    }
+
+    public function setTestResult($testNumber, array $testResult)
+    {
+        $this->results[$testNumber] = $testResult;
+
+        return $this;
+    }
+
+    public function getTestResult($testNumber)
+    {
+        return isset($this->results[$testNumber]) ? $this->results[$testNumber] : null;
     }
 
     public function setValue($testName, $value)
@@ -134,9 +147,9 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
             if ($beforeOK) {
                 $this->reporter->start($test);
                 $status = $test->run();
-                $this->reporter->end($test, $status);
+                $this->reporter->end($test, ['status' => $status]);
             } else {
-                $this->reporter->end($test, 'skipped');
+                $this->reporter->end($test, ['status' => 'skipped']);
             }
         }
 
@@ -165,6 +178,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
     public function addTestMethod(TestMethod $testMethod)
     {
+        $testMethod->setTestNumber(count($this->testables));
         $this->testables[] = $testMethod;
         $testMethod->setExecutionPlan($this);
 
@@ -180,16 +194,16 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
 
     public function getTestsCount()
     {
-        $n = 0;
+        $testsCount = 0;
         foreach ($this->testables as $testable) {
             if (is_array($testable)) {
-                $n += count($testable);
+                $testsCount += count($testable);
             } else {
-                $n += 1;
+                $testsCount += 1;
             }
         }
 
-        return $n;
+        return $testsCount;
     }
 
     public function makeInstance()

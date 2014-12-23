@@ -27,8 +27,10 @@ class Runner extends Server
     private $outputInterface;
     private $executionPlans = [];
     private $dispatchedPlans = [];
+    private $finishedPlans = [];
     private $spawnedClients = [];
     private $dispatchedCount = 0;
+    private $testsCount = 0;
 
     private $results = [
         'summary' => [
@@ -140,13 +142,13 @@ class Runner extends Server
         $method = $request->getMethod();
 
         if ($method === 'POST') {
-            $m = [];
+            $match = [];
             if ($path === '/executionPlans/get') {
                 $response->writeHead(200, array('Content-Type' => 'application/json'));
                 $response->end(json_encode($this->dispatchPlan()));
                 return;
-            } elseif (preg_match('#^/executionPlans/(\d+)/done$#', $path, $m)) {
-                $planToken = (int) $m[1];
+            } elseif (preg_match('#^/executionPlans/(\d+)/done$#', $path, $match)) {
+                $planToken = (int) $match[1];
                 $this->onPlanFinished($planToken);
                 $response->end();
                 return;
@@ -172,25 +174,34 @@ class Runner extends Server
     public function handleMessage(array $message)
     {
         if ($message['type'] === 'testStart') {
-            $this->log('<comment>...</comment> Starting test  `' . $message['testIdentifier'] . '`');
+            $this->log('<comment>... Starting test  `' . $message['testIdentifier'] . '`</comment>');
         } elseif ($message['type'] === 'testEnd') {
-            $status = $message['status'];
+            $status = $message['testResult']['status'];
+
+            $this->dispatchedPlans[$message['planToken']]['plan']->setTestResult(
+                $message['testNumber'],
+                $message['testResult']
+            );
 
             if ($status === 'ok') {
                 $statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
+                $statusString = 'OK     ';
                 ++$this->results['summary']['ok'];
             } elseif ($status === 'ko') {
                 $statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
+                $statusString = 'ERROR  ';
                 ++$this->results['summary']['ko'];
             } elseif ($status === 'skipped') {
                 $statusSymbol = '<fg=black;bg=yellow>xxx</fg=black;bg=yellow>';
+                $statusString = 'SKIPPED';
                 ++$this->results['summary']['skipped'];
             } else {
                 $statusSymbol = '<fg=black;bg=yellow>O_o</fg=black;bg=yellow>';
+                $statusString = 'UNKNWON';
                 ++$this->results['summary']['unknown'];
             }
 
-            $this->log($statusSymbol . ' Done with test `' . $message['testIdentifier'] . '`');
+            $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
         }
     }
 
@@ -220,7 +231,10 @@ class Runner extends Server
     public function onPlanFinished($planToken)
     {
         $this->log('<comment><<< Finished plan ' . $planToken . '</comment>');
+        $this->finishedPlans[$planToken] = $this->dispatchedPlans[$planToken];
         unset($this->dispatchedPlans[$planToken]);
+
+        $this->spawnClients();
     }
 
     public function tick()
@@ -233,19 +247,75 @@ class Runner extends Server
         }
         $this->spawnedClients = $remainingClients;
 
-        while (count($this->spawnedClients) < $this->maxProcesses && !empty($this->executionPlans)) {
-            $this->spawnClient();
-        }
+        $this->spawnClients();
 
         if (empty($this->dispatchedPlans) && empty($this->executionPlans)) {
             $this->done();
         }
     }
 
+    public function spawnClients()
+    {
+        while (count($this->spawnedClients) < $this->maxProcesses && !empty($this->executionPlans)) {
+            $this->spawnClient();
+        }
+
+        return $this;
+    }
+
     public function done()
     {
         $this->loop->stop();
         $this->log('Done!');
+        $this->summarizeResults();
+    }
+
+    public function summarizeResults()
+    {
+        $this->writeln("\n======================\n");
+
+        foreach ($this->finishedPlans as $finishedPlan) {
+            for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
+                $result = $finishedPlan['plan']->getTestResult($i);
+                
+                $statusChar = '?';
+                $color = 'red';
+                switch ($result['status']) {
+                    case 'ok':
+                        $statusChar = '.';
+                        $color = 'green';
+                        break;
+                    case 'ko':
+                        $statusChar = 'E';
+                        break;
+                    case 'skipped':
+                        $statusChar = 'S';
+                        break;
+                    case 'unknown':
+                        $statusChar = '?';
+                        break;
+                }
+
+                $this->write('<fg=' . $color . '>' . $statusChar . '</fg=' . $color . '>');
+            }
+        }
+
+        echo "\n\n";
+
+        $this->writeln(
+            sprintf(
+                'Ran %1$d tests, <fg=%6$s>%2$d OK</fg=%6$s>, <fg=%7$s>%3$d KO</fg=%7$s>, <fg=%8$s>%4$d SKIPPED</fg=%8$s>, <fg=%9$s>%5$d UNKNWON<fg=%9$s>.',
+                $this->testsCount,
+                $this->results['summary']['ok'],
+                $this->results['summary']['ko'],
+                $this->results['summary']['skipped'],
+                $this->results['summary']['unknown'],
+                $this->results['summary']['ok'] > 0 ? 'green' : 'red',
+                $this->results['summary']['ko'] > 0 ? 'red' : 'green',
+                $this->results['summary']['skipped'] > 0 ? 'red' : 'black',
+                $this->results['summary']['unknown'] > 0 ? 'red' : 'black'
+            )
+        );
     }
 
     public function spawnClient()
@@ -267,11 +337,13 @@ class Runner extends Server
 
         $process = $builder->getProcess();
         $process->start(function ($type, $buffer) {
-            $buffer = rtrim($buffer);
-            if (Process::ERR === $type) {
-                $this->writeln('<error>' . $buffer . '</error>');
-            } else {
-                $this->writeln('<info>' . $buffer . '</info>');
+            $buffer = trim($buffer);
+            if ($buffer) {
+                if (Process::ERR === $type) {
+                    $this->writeln('<error>' . $buffer . '</error>');
+                } else {
+                    $this->writeln('<info>' . $buffer . '</info>');
+                }
             }
         });
 
@@ -297,7 +369,7 @@ class Runner extends Server
         $this->spawnedClients[] = $handle;
     }
 
-    public function loadTests()
+    public function listTestFiles()
     {
         $files = [];
         if (is_dir($this->test)) {
@@ -317,6 +389,13 @@ class Runner extends Server
             throw new NoSuchFileOrDirectoryException($this->test);
         }
 
+        return $files;
+    }
+
+    public function loadTests()
+    {
+        $files = $this->listTestFiles();
+
         $loader = new Loader();
         $testPlan = new ParallelTestPlan();
         foreach ($files as $file) {
@@ -335,5 +414,7 @@ class Runner extends Server
         $epsCount = count($this->executionPlans);
         $epsMessage = $testsCount > 1 ? 'Tests are split into %d execution plans.' : 'There is %d execution plan.';
         $this->writeln(sprintf("<comment>$epsMessage</comment>", $epsCount));
+
+        $this->testsCount = $testsCount;
     }
 }

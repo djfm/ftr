@@ -10,4 +10,5 @@ interface TestInterface extends ArraySerializableInterface
     public function setInputArgumentValue($name, $value);
     public function run();
     public function getTestIdentifier();
+    public function getTestNumber();
 }

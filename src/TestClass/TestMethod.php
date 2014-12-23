@@ -16,6 +16,7 @@ class TestMethod implements TestInterface
     private $name;
     private $dependencies = [];
     private $expectedException;
+    private $testNumber;
 
     public function setClassFilePath($path)
     {
@@ -168,9 +169,17 @@ class TestMethod implements TestInterface
         return $this->className . '::' . $this->name;
     }
 
-    /**
-	 * Methods from ArraySerializableInterface
-	 */
+    public function setTestNumber($testNumber)
+    {
+        $this->testNumber = $testNumber;
+
+        return $this;
+    }
+
+    public function getTestNumber()
+    {
+        return $this->testNumber;
+    }
 
     public function toArray()
     {
@@ -197,4 +206,6 @@ class TestMethod implements TestInterface
 
         return $this;
     }
+
+
 }

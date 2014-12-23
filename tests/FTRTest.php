@@ -89,4 +89,18 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'unknown' => 0
         ], $res['summary']);
     }
+
+    public function testExtraTestFunctionsAreCalled()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/ExtraTestFunctionsAreCalledTest.php']);
+
+        $this->assertArrayHasKey('summary', $res);
+
+        $this->assertEquals([
+            'ok' => 2,
+            'ko' => 0,
+            'skipped' => 0,
+            'unknown' => 0
+        ], $res['summary']);
+    }
 }

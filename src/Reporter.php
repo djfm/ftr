@@ -21,19 +21,21 @@ class Reporter
         $this->client->post('/messages', [
             'type' => 'testStart',
             'planToken' => $this->planToken,
-            'testIdentifier' => $test->getTestIdentifier()
+            'testIdentifier' => $test->getTestIdentifier(),
+            'testNumber' => $test->getTestNumber()
         ]);
 
         return $this;
     }
 
-    public function end(TestInterface $test, $status)
+    public function end(TestInterface $test, array $testResult)
     {
         $this->client->post('/messages', [
             'type' => 'testEnd',
             'planToken' => $this->planToken,
             'testIdentifier' => $test->getTestIdentifier(),
-            'status' => $status
+            'testNumber' => $test->getTestNumber(),
+            'testResult' => $testResult,
         ]);
 
         return $this;
