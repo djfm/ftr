@@ -233,7 +233,7 @@ class Runner extends Server
 
         $plan = array_shift($this->executionPlans);
         $this->dispatchedCount++;
-        $planToken = $this->dispatchedCount;
+        $planToken = count($this->executionPlans);
         $this->dispatchedPlans[$planToken] = [
             'dispatchedAt' => time(),
             'plan' => $plan
@@ -305,7 +305,7 @@ class Runner extends Server
     }
 
     public function showDots()
-    {
+    {        
         foreach ($this->finishedPlans as $finishedPlan) {
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
                 $result = $finishedPlan['plan']->getTestResult($i);
@@ -384,6 +384,8 @@ class Runner extends Server
 
     public function summarizeResults()
     {
+        ksort($this->finishedPlans);
+        
         $this->writeln("\n======================\n");
 
         $this->showErrorsSkippedAndUnknown();
