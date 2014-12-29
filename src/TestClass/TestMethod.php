@@ -103,6 +103,8 @@ class TestMethod implements TestInterface
     {
         $testResult = new TestResult();
 
+        $testResult->setIdentifierHierarchy([$this->className, $this->name]);
+
         $startedAt = microtime(true);
         $arguments = [];
 

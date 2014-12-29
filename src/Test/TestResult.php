@@ -17,6 +17,7 @@ class TestResult implements ArraySerializableInterface
     private $zippedArtefactsDir = null;
     private $startedAt;
     private $tags = [];
+    private $identifier = [];
 
     public function __construct()
     {
@@ -67,6 +68,18 @@ class TestResult implements ArraySerializableInterface
         return $this;
     }
 
+    public function setIdentifierHierarchy(array $hierarchy)
+    {
+        $this->identifierHierarchy = $hierarchy;
+
+        return $this;
+    }
+
+    public function getIdentifierHierarchy()
+    {
+        return $this->identifierHierarchy;
+    }
+
     public function getExceptions()
     {
         return $this->exceptions;
@@ -75,7 +88,7 @@ class TestResult implements ArraySerializableInterface
     public function addArtefactsDir($dir)
     {
         if (is_dir($dir)) {
-            $tempFile    = tempnam(null, null);
+            $tempFile   = tempnam(null, null);
             $archive    = new ZipArchive();
             $archive->open($tempFile);
             $finder = new Finder();
@@ -136,7 +149,8 @@ class TestResult implements ArraySerializableInterface
             'runTime' => $this->runTime,
             'exceptions' => $this->exceptions,
             'startedAt' => $this->startedAt,
-            'tags' => $this->tags
+            'tags' => $this->tags,
+            'identifierHierarchy' => $this->identifierHierarchy
         ];
 
         if ($includeArtefactsDir) {
@@ -154,5 +168,6 @@ class TestResult implements ArraySerializableInterface
         $this->startedAt = $data['startedAt'];
         $this->tags = $data['tags'];
         $this->zippedArtefactsDir = base64_decode($data['zippedArtefactsDir']);
+        $this->identifierHierarchy = $data['identifierHierarchy'];
     }
 }
