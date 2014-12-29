@@ -37,7 +37,7 @@ class Client
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
-        }  
+        }
 
 
         if (is_array($payload)) {

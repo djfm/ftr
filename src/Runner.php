@@ -199,7 +199,6 @@ class Runner extends Server
         if ($message['type'] === 'testStart') {
             $this->log('<comment>... Starting test  `' . $message['testIdentifier'] . '`</comment>');
         } elseif ($message['type'] === 'testEnd') {
-
             $testResult = new TestResult();
             $testResult->fromArray($message['testResult']);
 

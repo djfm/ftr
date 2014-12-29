@@ -124,9 +124,18 @@ class TestMethod implements TestInterface
 
         $instance = $this->executionPlan->makeInstance();
 
-        $before = [$instance, 'setUp'];
-        $after    = [$instance, 'tearDown'];
+        $aboutToStart = [$instance, 'aboutToStart'];
 
+        if (is_callable($aboutToStart)) {
+            try {
+                $aboutToStart($this->name, $arguments);
+            } catch (Exception $e) {
+                $testResult->addException($e);
+            }
+        }
+
+        $before     = [$instance, 'setUp'];
+        $after      = [$instance, 'tearDown'];
 
         $beforeOK = true;
         if (is_callable($before)) {
@@ -150,6 +159,17 @@ class TestMethod implements TestInterface
                 } else {
                     $testResult->addException($e);
                 }
+            }
+        }
+
+        $getArtefactsDir = [$instance, 'getArtefactsDir'];
+
+        if (is_callable($getArtefactsDir)) {
+            try {
+                $artefactsDir = $getArtefactsDir();
+                $testResult->addArtefactsDir($artefactsDir);
+            } catch (Exception $e) {
+                $testResult->addException($e);
             }
         }
 
