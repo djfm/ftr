@@ -7,6 +7,7 @@ use ReflectionClass, Exception, ReflectionException;
 use djfm\ftr\Exception\NotAnExecutionPlanException;
 use djfm\ftr\ExecutionPlan\ExecutionPlanInterface;
 use djfm\ftr\TestPlan\TestPlanInterface;
+use djfm\ftr\Test\TestResult;
 use djfm\ftr\Reporter;
 use djfm\ftr\Helper\ExceptionHelper;
 
@@ -95,7 +96,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
         return $this->getTestable($testNumber);
     }
 
-    public function setTestResult($testNumber, array $testResult)
+    public function setTestResult($testNumber, TestResult $testResult)
     {
         $this->results[$testNumber] = $testResult;
 
@@ -158,20 +159,11 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
         foreach ($this->testables as $test) {
             if ($beforeOK) {
                 $this->reporter->start($test);
-                $testOutput = $test->run();
-                
-                $result = [];
-
-                if ($testOutput instanceof Exception) {
-                    $result['status'] = 'ko';
-                    $result['exception'] = ExceptionHelper::toArray($testOutput);
-                } else {
-                    $result['status'] = $testOutput;
-                }
-
-                $this->reporter->end($test, $result);
+                $this->reporter->end($test, $test->run());
             } else {
-                $this->reporter->end($test, ['status' => 'skipped']);
+                $testResult = new TestResult();
+                $testResult->setStatus('skipped');
+                $this->reporter->end($test, $testResult);
             }
         }
 

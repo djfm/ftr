@@ -5,6 +5,7 @@ namespace djfm\ftr;
 use Exception;
 
 use djfm\ftr\Test\TestInterface;
+use djfm\ftr\Test\TestResult;
 use djfm\ftr\IPC\Client;
 use djfm\ftr\Helper\ExceptionHelper;
 
@@ -22,25 +23,23 @@ class Reporter
     public function start(TestInterface $test)
     {
         $this->client->post('/messages', [
-            'type' => 'testStart',
-            'planToken' => $this->planToken,
+            'type'           => 'testStart',
+            'planToken'      => $this->planToken,
             'testIdentifier' => $test->getTestIdentifier(),
-            'testNumber' => $test->getTestNumber()
+            'testNumber'     => $test->getTestNumber()
         ]);
 
         return $this;
     }
 
-    public function end(TestInterface $test, array $testResult)
+    public function end(TestInterface $test, TestResult $testResult)
     {
-        $testResult['testIdentifier'] = $test->getTestIdentifier();
-
         $this->client->post('/messages', [
-            'type' => 'testEnd',
-            'planToken' => $this->planToken,
+            'type'           => 'testEnd',
+            'planToken'      => $this->planToken,
             'testIdentifier' => $test->getTestIdentifier(),
-            'testNumber' => $test->getTestNumber(),
-            'testResult' => $testResult,
+            'testNumber'     => $test->getTestNumber(),
+            'testResult'     => $testResult->toArray()
         ]);
 
         return $this;

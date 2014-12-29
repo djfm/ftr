@@ -14,6 +14,7 @@ use djfm\ftr\IPC\Server;
 use djfm\ftr\Helper\Process as ProcessHelper;
 use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
 use djfm\ftr\Helper\ExceptionHelper;
+use djfm\ftr\Test\TestResult;
 
 use Exception;
 
@@ -181,11 +182,15 @@ class Runner extends Server
         if ($message['type'] === 'testStart') {
             $this->log('<comment>... Starting test  `' . $message['testIdentifier'] . '`</comment>');
         } elseif ($message['type'] === 'testEnd') {
-            $status = $message['testResult']['status'];
+
+            $testResult = new TestResult();
+            $testResult->fromArray($message['testResult']);
+
+            $status = $testResult->getStatus();
 
             $this->dispatchedPlans[$message['planToken']]['plan']->setTestResult(
                 $message['testNumber'],
-                $message['testResult']
+                $testResult
             );
 
             if ($status === 'ok') {
@@ -208,8 +213,8 @@ class Runner extends Server
 
             $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
 
-            if (isset($message['testResult']['exception'])) {
-                $this->printException($message['testResult']['exception']);
+            foreach ($testResult->getExceptions() as $exception) {
+                $this->printException($exception);
             }
         } elseif ($message['type'] === 'exception') {
             if (!isset($this->dispatchedPlans[$message['planToken']]['exception'])) {
@@ -264,14 +269,7 @@ class Runner extends Server
 
         for ($i = 0; $i < $plan->getTestsCount(); ++$i) {
             if (!$plan->getTestResult($i)) {
-
-                $test = $plan->getTest($i);
-
-                $plan->setTestResult($i, [
-                    'testIdentifier' => $test->getTestIdentifier(),
-                    'status' => 'unknown'
-                ]);
-
+                $plan->setTestResult($i, new TestResult());
                 ++$this->results['summary']['unknown'];
             }
         }
@@ -319,7 +317,7 @@ class Runner extends Server
                 $result = $finishedPlan['plan']->getTestResult($i);
                 $statusChar = '?';
                 $color = 'red';
-                switch ($result['status']) {
+                switch ($result->getStatus()) {
                     case 'ok':
                         $statusChar = '.';
                         $color = 'green';
@@ -355,15 +353,18 @@ class Runner extends Server
             }
 
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
-                $result = $finishedPlan['plan']->getTestResult($i);
+                $testResult     = $finishedPlan['plan']->getTestResult($i);
+                $testIdentifier = $finishedPlan['plan']->getTest($i)->getTestIdentifier();
 
-                if (isset($result['exception'])) {
-                    $this->writeln('In test `' . $result['testIdentifier'] . '`:');
-                    $this->printException($result['exception'], '');
-                } elseif ($result['status'] === 'skipped') {
-                    $skipped[] = $result['testIdentifier'];
-                } elseif ($result['status'] === 'unknown') {
-                    $unknown[] = $result['testIdentifier'];
+                foreach ($testResult->getExceptions() as $exception) {
+                    $this->writeln('In test `' . $testIdentifier . '`:');
+                    $this->printException($exception, '');
+                }
+
+                if ($testResult->getStatus() === 'skipped') {
+                    $skipped[] = $testIdentifier;
+                } elseif ($testResult->getStatus() === 'unknown') {
+                    $unknown[] = $testIdentifier;
                 }
             }
         }

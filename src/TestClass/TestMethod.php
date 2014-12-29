@@ -3,6 +3,7 @@
 namespace djfm\ftr\TestClass;
 
 use djfm\ftr\Test\TestInterface;
+use djfm\ftr\Test\TestResult;
 
 use Exception;
 
@@ -100,6 +101,9 @@ class TestMethod implements TestInterface
 
     public function run()
     {
+        $testResult = new TestResult();
+
+        $startedAt = time();
         $arguments = [];
 
         foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
@@ -108,7 +112,8 @@ class TestMethod implements TestInterface
                 if ($this->executionPlan->hasValue($dependsOn)) {
                     $arguments[] = $this->executionPlan->getValue($dependsOn);
                 } else {
-                    return 'skipped';
+                    $testResult->setStatus('skipped');
+                    return $testResult;
                 }
             } elseif (array_key_exists($argumentName, $this->inputArguments)) {
                 $arguments[] = $this->inputArguments[$argumentName];
@@ -122,7 +127,6 @@ class TestMethod implements TestInterface
         $before = [$instance, 'setUp'];
         $after    = [$instance, 'tearDown'];
 
-        $testException = null;
 
         $beforeOK = true;
         if (is_callable($before)) {
@@ -130,7 +134,7 @@ class TestMethod implements TestInterface
                 $before();
             } catch (Exception $e) {
                 $beforeOK = false;
-                $testException = $e;
+                $testResult->addException($e);
             }
         }
 
@@ -144,7 +148,7 @@ class TestMethod implements TestInterface
                 if ($this->expectedException && $e instanceof $this->expectedException) {
                     $testOK = true;
                 } else {
-                    $testException = $e;
+                    $testResult->addException($e);
                 }
             }
         }
@@ -155,21 +159,25 @@ class TestMethod implements TestInterface
                 $after();
             } catch (Exception $e) {
                 $afterOK = false;
-                if (!$testException) {
-                    $testException = $e;
-                }
+                $testResult->addException($e);
             }
         }
 
-        if ($beforeOK && $afterOK) {
-            if ($testOK) {
-                return 'ok';
-            } else {
-                return $testException;
-            }
+        $runTime = time() - $startedAt;
+        $testResult->setRunTime($runTime);
+
+        if ($beforeOK && $afterOK && $testOK) {
+                $testResult->setStatus('ok');
         } else {
-            return $testException;
+            $testResult->setStatus('ko');
         }
+
+        return $testResult;
+    }
+
+    public function getRunTime()
+    {
+        return $this->runTime;
     }
 
     public function getTestIdentifier()
