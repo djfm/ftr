@@ -199,37 +199,7 @@ class Runner extends Server
         if ($message['type'] === 'testStart') {
             $this->log('<comment>... Starting test  `' . $message['testIdentifier'] . '`</comment>');
         } elseif ($message['type'] === 'testEnd') {
-            $testResult = new TestResult();
-            $testResult->fromArray($message['testResult']);
-
-            $status = $testResult->getStatus();
-
-            $this->dispatchedPlans[$message['planToken']]['plan']->setTestResult(
-                $message['testNumber'],
-                $testResult
-            );
-
-            $this->addResultToSummary($testResult);
-
-            if ($status === 'ok') {
-                $statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
-                $statusString = 'OK     ';
-            } elseif ($status === 'ko') {
-                $statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
-                $statusString = 'ERROR  ';
-            } elseif ($status === 'skipped') {
-                $statusSymbol = '<fg=black;bg=yellow>xxx</fg=black;bg=yellow>';
-                $statusString = 'SKIPPED';
-            } else {
-                $statusSymbol = '<fg=black;bg=yellow>O_o</fg=black;bg=yellow>';
-                $statusString = 'UNKNWON';
-            }
-
-            $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
-
-            foreach ($testResult->getExceptions() as $exception) {
-                $this->printException($exception);
-            }
+            $this->handleTestEnd($message);
         } elseif ($message['type'] === 'exception') {
             if (!isset($this->dispatchedPlans[$message['planToken']]['exception'])) {
                 $this->dispatchedPlans[$message['planToken']]['exception'] = [];
@@ -238,6 +208,105 @@ class Runner extends Server
             $this->dispatchedPlans[$message['planToken']]['exception'][] = $message['exception'];
             
             $this->printException($message['exception']);
+        }
+    }
+
+    public function handleTestEnd(array $message)
+    {
+        $testResult = new TestResult();
+        $testResult->fromArray($message['testResult']);
+
+        $this->dumpResultToHistory($testResult);
+
+        $status = $testResult->getStatus();
+
+        $this->dispatchedPlans[$message['planToken']]['plan']->setTestResult(
+            $message['testNumber'],
+            $testResult
+        );
+
+        $this->addResultToSummary($testResult);
+
+        if ($status === 'ok') {
+            $statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
+            $statusString = 'OK     ';
+        } elseif ($status === 'ko') {
+            $statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
+            $statusString = 'ERROR  ';
+        } elseif ($status === 'skipped') {
+            $statusSymbol = '<fg=black;bg=yellow>xxx</fg=black;bg=yellow>';
+            $statusString = 'SKIPPED';
+        } else {
+            $statusSymbol = '<fg=black;bg=yellow>O_o</fg=black;bg=yellow>';
+            $statusString = 'UNKNWON';
+        }
+
+        $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
+
+        foreach ($testResult->getExceptions() as $exception) {
+            $this->printException($exception);
+        }
+    }
+
+    public function dumpResultToHistory(TestResult $testResult)
+    {
+        $testData = $testResult->toArray(false); // false: don't include zipped artefacts
+        
+        $historyRoot = 'test-history';
+
+        if (!is_dir($historyRoot)) {
+            mkdir($historyRoot, 0777, true);
+        }
+
+        $infoFile = $historyRoot . DIRECTORY_SEPARATOR . 'info.json';
+        $historyFile = $historyRoot . DIRECTORY_SEPARATOR . 'history.json.stream';
+
+        $relativeArtefactsRoot = 'artefacts';
+        $absoluteArtefactsRoot = $historyRoot . DIRECTORY_SEPARATOR . $relativeArtefactsRoot;
+
+        if (!is_dir($absoluteArtefactsRoot)) {
+            mkdir($absoluteArtefactsRoot, 0777, true);
+        }
+
+        $infoHandle = fopen($infoFile, 'c+');
+
+        if (!$infoHandle) {
+            throw new Exception('Could not create file: ' + $infoFile);
+        }
+
+        if (!flock($infoHandle, LOCK_EX)) {
+            throw new Exception('Could not acquire exclusive lock on file: ' + $infoFile);
+        }
+
+        try {
+            clearstatcache();
+            $info = json_decode(fread($infoHandle, filesize($infoFile)), true);
+
+            if (!$info) {
+                $info = [
+                    'historySize' => 0
+                ];
+            }
+
+            $nextId = $info['historySize']++;
+
+            $absoluteArtefacts = $absoluteArtefactsRoot . DIRECTORY_SEPARATOR . $nextId;
+            $artefacts = $relativeArtefactsRoot . DIRECTORY_SEPARATOR . $nextId;
+
+            $testData['historyId'] = $nextId;
+            $testData['artefacts'] = $artefacts;
+
+            $testResult->unpackArtefactsDir($absoluteArtefacts);
+
+            file_put_contents($historyFile, json_encode($testData), FILE_APPEND | LOCK_EX);
+
+            ftruncate($infoHandle, 0);
+            rewind($infoHandle);
+
+            fwrite($infoHandle, json_encode($info));
+        } finally {
+            flock($infoHandle, LOCK_UN);
+            fclose($infoHandle);
         }
     }
 

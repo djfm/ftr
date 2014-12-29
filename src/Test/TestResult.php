@@ -15,6 +15,26 @@ class TestResult implements ArraySerializableInterface
     private $runTime = 0;
     private $exceptions = [];
     private $zippedArtefactsDir = null;
+    private $startedAt;
+    private $tags = [];
+
+    public function __construct()
+    {
+        // better than nothing if caller forgets to set start time
+        $this->startedAt = time();
+    }
+
+    public function setStartedAt($startedAt)
+    {
+        $this->startedAt = $startedAt;
+
+        return $this;
+    }
+
+    public function getStartedAt()
+    {
+        return $this->startedAt;
+    }
 
     public function setStatus($status)
     {
@@ -71,14 +91,59 @@ class TestResult implements ArraySerializableInterface
         }
     }
 
-    public function toArray()
+    public function unpackArtefactsDir($target = '')
     {
-        return [
+        if ($this->zippedArtefactsDir) {
+            $tempFile = tempnam(null, null);
+            file_put_contents($tempFile, $this->zippedArtefactsDir);
+            $archive = new ZipArchive();
+            $archive->open($tempFile);
+            $archive->extractTo($target);
+            unlink($tempFile);
+        }
+    }
+
+    public function setTags(array $tags)
+    {
+        $this->tags = $tags;
+
+        return $this;
+    }
+
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    public function addTags(array $tags)
+    {
+        $this->tags = array_merge($this->tags, $tags);
+
+        return $this;
+    }
+
+    public function addTag($tag, $value)
+    {
+        $this->tags[$tag] = $value;
+
+        return $this;
+    }
+
+    public function toArray($includeArtefactsDir = true)
+    {
+        $data = [
             'status' => $this->status,
             'runTime' => $this->runTime,
             'exceptions' => $this->exceptions,
-            'zippedArtefactsDir' => base64_encode($this->zippedArtefactsDir)
+            'startedAt' => $this->startedAt,
+            'tags' => $this->tags
         ];
+
+        if ($includeArtefactsDir) {
+            $data['zippedArtefactsDir'] = base64_encode($this->zippedArtefactsDir);
+        }
+
+        return $data;
     }
 
     public function fromArray(array $data)
@@ -86,6 +151,8 @@ class TestResult implements ArraySerializableInterface
         $this->status = $data['status'];
         $this->runTime = $data['runTime'];
         $this->exceptions = $data['exceptions'];
-        $this->zippedArtefactsDir    = base64_decode($data['zippedArtefactsDir']);
+        $this->startedAt = $data['startedAt'];
+        $this->tags = $data['tags'];
+        $this->zippedArtefactsDir = base64_decode($data['zippedArtefactsDir']);
     }
 }

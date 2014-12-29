@@ -110,13 +110,13 @@ class TestMethod implements TestInterface
             if (array_key_exists($argumentName, $this->getDependencies())) {
                 $dependsOn = $this->getDependencies()[$argumentName];
                 if ($this->executionPlan->hasValue($dependsOn)) {
-                    $arguments[] = $this->executionPlan->getValue($dependsOn);
+                    $arguments[$argumentName] = $this->executionPlan->getValue($dependsOn);
                 } else {
                     $testResult->setStatus('skipped');
                     return $testResult;
                 }
             } elseif (array_key_exists($argumentName, $this->inputArguments)) {
-                $arguments[] = $this->inputArguments[$argumentName];
+                $arguments[$argumentName] = $this->inputArguments[$argumentName];
             } else {
                 throw new Exception("No argument value found for `$argumentName`.");
             }
@@ -125,6 +125,7 @@ class TestMethod implements TestInterface
         $instance = $this->executionPlan->makeInstance();
 
         $aboutToStart = [$instance, 'aboutToStart'];
+        $testResult->setTags($arguments);
 
         if (is_callable($aboutToStart)) {
             try {
@@ -242,6 +243,4 @@ class TestMethod implements TestInterface
 
         return $this;
     }
-
-
 }
