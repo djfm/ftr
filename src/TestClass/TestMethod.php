@@ -103,7 +103,7 @@ class TestMethod implements TestInterface
     {
         $testResult = new TestResult();
 
-        $startedAt = time();
+        $startedAt = microtime(true);
         $arguments = [];
 
         foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
@@ -163,7 +163,7 @@ class TestMethod implements TestInterface
             }
         }
 
-        $runTime = time() - $startedAt;
+        $runTime = microtime(true) - $startedAt;
         $testResult->setRunTime($runTime);
 
         if ($beforeOK && $afterOK && $testOK) {

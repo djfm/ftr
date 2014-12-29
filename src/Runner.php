@@ -37,12 +37,29 @@ class Runner extends Server
 
     private $results = [
         'summary' => [
-            'ok' => 0,
-            'ko' => 0,
-            'skipped' => 0,
-            'unknown' => 0
+            'status' => [
+                'ok' => 0,
+                'ko' => 0,
+                'skipped' => 0,
+                'unknown' => 0
+            ],
+            'runTime' => 0
         ]
     ];
+
+    public function addResultToSummary(TestResult $testResult)
+    {
+        $status = $testResult->getStatus();
+        if (!array_key_exists($status, $this->results['summary']['status'])) {
+            $status = 'unknown';
+        }
+
+        ++$this->results['summary']['status'][$status];
+
+        $this->results['summary']['runTime'] += $testResult->getRunTime();
+
+        return $this;
+    }
 
     public function setTest($test)
     {
@@ -193,22 +210,20 @@ class Runner extends Server
                 $testResult
             );
 
+            $this->addResultToSummary($testResult);
+
             if ($status === 'ok') {
                 $statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
                 $statusString = 'OK     ';
-                ++$this->results['summary']['ok'];
             } elseif ($status === 'ko') {
                 $statusSymbol = '<fg=red;bg=black>:<(</fg=red;bg=black>';
                 $statusString = 'ERROR  ';
-                ++$this->results['summary']['ko'];
             } elseif ($status === 'skipped') {
                 $statusSymbol = '<fg=black;bg=yellow>xxx</fg=black;bg=yellow>';
                 $statusString = 'SKIPPED';
-                ++$this->results['summary']['skipped'];
             } else {
                 $statusSymbol = '<fg=black;bg=yellow>O_o</fg=black;bg=yellow>';
                 $statusString = 'UNKNWON';
-                ++$this->results['summary']['unknown'];
             }
 
             $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
@@ -269,8 +284,10 @@ class Runner extends Server
 
         for ($i = 0; $i < $plan->getTestsCount(); ++$i) {
             if (!$plan->getTestResult($i)) {
-                $plan->setTestResult($i, new TestResult());
-                ++$this->results['summary']['unknown'];
+                $testResult = new TestResult();
+                $testResult->setStatus('unknown');
+                $plan->setTestResult($i, $testResult);
+                $this->addResultToSummary($testResult);
             }
         }
 
@@ -400,18 +417,24 @@ class Runner extends Server
 
         $this->writeln(
             sprintf(
-                'Ran %1$d tests, <fg=%6$s>%2$d OK</fg=%6$s>, <fg=%7$s>%3$d KO</fg=%7$s>, <fg=%8$s>%4$d SKIPPED</fg=%8$s>, <fg=%9$s>%5$d UNKNWON<fg=%9$s>.',
+                'Ran %1$d tests, <fg=%6$s>%2$d OK</fg=%6$s>, <fg=%7$s>%3$d KO</fg=%7$s>, <fg=%8$s>%4$d SKIPPED</fg=%8$s>, <fg=%9$s>%5$d UNKNWON</fg=%9$s>.',
                 $this->testsCount,
-                $this->results['summary']['ok'],
-                $this->results['summary']['ko'],
-                $this->results['summary']['skipped'],
-                $this->results['summary']['unknown'],
-                $this->results['summary']['ok'] > 0 ? 'green' : 'red',
-                $this->results['summary']['ko'] > 0 ? 'red' : 'green',
-                $this->results['summary']['skipped'] > 0 ? 'red' : 'green',
-                $this->results['summary']['unknown'] > 0 ? 'red' : 'green'
+                $this->results['summary']['status']['ok'],
+                $this->results['summary']['status']['ko'],
+                $this->results['summary']['status']['skipped'],
+                $this->results['summary']['status']['unknown'],
+                $this->results['summary']['status']['ok'] > 0 ? 'green' : 'red',
+                $this->results['summary']['status']['ko'] > 0 ? 'red' : 'green',
+                $this->results['summary']['status']['skipped'] > 0 ? 'red' : 'green',
+                $this->results['summary']['status']['unknown'] > 0 ? 'red' : 'green'
             )
         );
+
+        $time = $this->results['summary']['runTime'];
+
+        $duration = sprintf("%.2f", $time) . 's';
+
+        $this->writeln(sprintf('[Took %s]', $duration));
     }
 
     public function spawnClient()
