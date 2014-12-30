@@ -35,6 +35,7 @@ class Runner extends Server
     private $testsCount = 0;
     private $bootstrap = '';
     private $stress = 1;
+    private $startedAt;
 
     private $results = [
         'summary' => [
@@ -157,6 +158,7 @@ class Runner extends Server
 
     public function run()
     {
+        $this->startedAt = time();
         $this->loadTests();
         if ($this->informationOnly) {
             $this->writeln("Information only mode - not going to actually run the tests.");
@@ -509,11 +511,13 @@ class Runner extends Server
             )
         );
 
-        $time = $this->results['summary']['runTime'];
+        $realTime = $this->results['summary']['runTime'];
+        $realDuration = sprintf("%.2f", $realTime) . 's';
 
-        $duration = sprintf("%.2f", $time) . 's';
+        $userTime = time() - $this->startedAt;
+        $userDuration = sprintf("%.2f", $userTime) . 's';
 
-        $this->writeln(sprintf('[Took %s]', $duration));
+        $this->writeln(sprintf('[Took %s (%s real, unparallelized time)]', $userDuration, $realDuration));
     }
 
     public function spawnClient()

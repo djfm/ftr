@@ -34,6 +34,7 @@ class RunCommand extends Command
         ->addOption('filter', 'f', InputOption::VALUE_REQUIRED, 'Filter the tests to be run.')
         ->addOption('bootstrap', 'b', InputOption::VALUE_REQUIRED, 'Include bootstrap file.', '')
         ->addOption('data-provider-filter', 'z', InputOption::VALUE_REQUIRED, 'Filter the data returned by data providers.')
+        ->addOption('stress', null, InputOption::VALUE_REQUIRED, 'Run each test several times.', 1)
         ;
     }
 
@@ -49,7 +50,9 @@ class RunCommand extends Command
         ->setBootstrap($input->getOption('bootstrap'))
         ->setDataProviderFilter($input->getOption('data-provider-filter'))
         ->setOutputInterface($output)
+        ->setStress($input->getOption('stress'))
         ;
+        
         try {
             $this->lastRunData = $runner->run();
         } catch (Exception $e) {
