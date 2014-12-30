@@ -206,7 +206,7 @@ class Runner extends Server
             }
 
             $this->dispatchedPlans[$message['planToken']]['exception'][] = $message['exception'];
-            
+
             $this->printException($message['exception']);
         }
     }
@@ -216,7 +216,7 @@ class Runner extends Server
         $testResult = new TestResult();
         $testResult->fromArray($message['testResult']);
 
-        $this->dumpResultToHistory($testResult);
+        $this->handleResult($testResult);
 
         $status = $testResult->getStatus();
 
@@ -224,8 +224,6 @@ class Runner extends Server
             $message['testNumber'],
             $testResult
         );
-
-        $this->addResultToSummary($testResult);
 
         if ($status === 'ok') {
             $statusSymbol = '<fg=green;bg=white>:-)</fg=green;bg=white>';
@@ -248,10 +246,16 @@ class Runner extends Server
         }
     }
 
+    public function handleResult(TestResult $testResult)
+    {
+        $this->dumpResultToHistory($testResult);
+        $this->addResultToSummary($testResult);
+    }
+
     public function dumpResultToHistory(TestResult $testResult)
     {
         $testData = $testResult->toArray(false); // false: don't include zipped artefacts
-        
+
         $historyRoot = 'test-history';
 
         if (!is_dir($historyRoot)) {
@@ -355,7 +359,7 @@ class Runner extends Server
                 $testResult = new TestResult();
                 $testResult->setStatus('unknown');
                 $plan->setTestResult($i, $testResult);
-                $this->addResultToSummary($testResult);
+                $this->handleResult($testResult);
             }
         }
 
@@ -396,7 +400,7 @@ class Runner extends Server
     }
 
     public function showDots()
-    {        
+    {
         foreach ($this->finishedPlans as $finishedPlan) {
             for ($i = 0; $i < $finishedPlan['plan']->getTestsCount(); ++$i) {
                 $result = $finishedPlan['plan']->getTestResult($i);
@@ -429,7 +433,6 @@ class Runner extends Server
         $unknown = [];
 
         foreach ($this->finishedPlans as $finishedPlan) {
-
             if (isset($finishedPlan['exception'])) {
                 foreach ($finishedPlan['exception'] as $exception) {
                     $this->writeln('In plan `' . $finishedPlan['plan']->getPlanIdentifier() . '`:');

@@ -35,7 +35,7 @@ class Worker extends Client
         register_shutdown_function(function () {
             $this->post('/executionPlans/'.$this->planToken.'/done');
         });
-        
+
         $reporter = new Reporter($this, $this->planToken);
 
         $plan->setReporter($reporter);
