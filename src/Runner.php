@@ -590,6 +590,8 @@ class Runner extends Server
         $loader = new Loader();
 
         $loader->setBootstrap($this->bootstrap);
+        $loader->setDataProviderFilter($this->dataProviderFilter);
+        $loader->setFilter($this->filter);
 
         $testPlan = new ParallelTestPlan();
         foreach ($files as $file) {

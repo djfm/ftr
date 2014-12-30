@@ -13,10 +13,26 @@ use djfm\ftr\Loader\LoaderInterface;
 class TestClassLoader implements LoaderInterface
 {
     private $bootstrap = '';
+    private $dataProviderFilter = '';
+    private $filter = '';
 
     public function setBootstrap($filePath)
     {
         $this->bootstrap = $filePath;
+
+        return $this;
+    }
+
+    public function setDataProviderFilter($filter)
+    {
+        $this->dataProviderFilter = $filter;
+
+        return $this;
+    }
+
+    public function setFilter($filter)
+    {
+        $this->filter = $filter;
 
         return $this;
     }
@@ -73,6 +89,16 @@ class TestClassLoader implements LoaderInterface
 
         $refl = new ReflectionClass($className);
 
+        // Prepare dataProviderFilter
+        $dataProviderFilter = null;
+        if ($this->dataProviderFilter) {
+            list ($methodFilter, $argumentsFilter) = explode(':', $this->dataProviderFilter, 2);
+            $dataProviderFilter = [
+                'methodFilter' => $methodFilter,
+                'argumentsFilter' => explode(',', $argumentsFilter)
+            ];
+        }
+
         foreach ($refl->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
             $dcp = new DocCommentParser($method->getDocComment());
 
@@ -86,6 +112,30 @@ class TestClassLoader implements LoaderInterface
                 $dataProviderArguments = $executionPlan->call(
                     $dcp->getOption('dataprovider')
                 );
+
+                if ($dataProviderFilter && $method->getName() === $dataProviderFilter['methodFilter']) {
+                    $dataProviderArguments = array_filter(
+                        $dataProviderArguments,
+                        function ($arguments) use ($dataProviderFilter) {
+                            foreach ($dataProviderFilter['argumentsFilter'] as $pos => $filter) {
+                                if ($pos >= count($arguments)) {
+                                    return false;
+                                }
+                                if (!is_scalar($arguments[$pos])) {
+                                    return false;
+                                }
+
+                                $regexp = '/' . preg_quote($filter) . '/';
+
+                                if (!preg_match($regexp, (string)$arguments[$pos])) {
+                                    return false;
+                                }
+
+                                return true;
+                            }
+                        }
+                    );
+                }
             }
 
             $testMethods = [];

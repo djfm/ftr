@@ -29,6 +29,24 @@ class Loader implements LoaderInterface
         return $this;
     }
 
+    public function setDataProviderFilter($filter)
+    {
+        foreach ($this->loaders as $loader) {
+            $loader->setDataProviderFilter($filter);
+        }
+
+        return $this;
+    }
+
+    public function setFilter($filter)
+    {
+        foreach ($this->loaders as $loader) {
+            $loader->setFilter($filter);
+        }
+
+        return $this;
+    }
+
     public function getLoaders()
     {
         return $this->loaders;
