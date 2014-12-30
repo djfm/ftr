@@ -34,6 +34,7 @@ class Runner extends Server
     private $dispatchedCount = 0;
     private $testsCount = 0;
     private $bootstrap = '';
+    private $stress = 1;
 
     private $results = [
         'summary' => [
@@ -64,6 +65,13 @@ class Runner extends Server
     public function setTest($test)
     {
         $this->test = $test;
+
+        return $this;
+    }
+
+    public function setStress($level)
+    {
+        $this->stress = $level;
 
         return $this;
     }
@@ -595,9 +603,11 @@ class Runner extends Server
 
         $testPlan = new ParallelTestPlan();
         foreach ($files as $file) {
-            $plan = $loader->loadFile($file);
-            if ($plan) {
-                $testPlan->addTestPlan($plan);
+            for ($n = 0; $n < $this->stress; ++$n) {
+                $plan = $loader->loadFile($file);
+                if ($plan) {
+                    $testPlan->addTestPlan($plan);
+                }
             }
         }
 
