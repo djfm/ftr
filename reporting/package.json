@@ -1,0 +1,23 @@
+{
+  "name": "reporting",
+  "version": "0.0.0",
+  "description": "Reporter for ftr",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "djfm",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.10.6",
+    "jade-brunch": "^1.8.1",
+    "less-brunch": "^1.7.2",
+    "minimist": "^1.1.0",
+    "socket.io": "^1.2.1",
+    "stylus-brunch": "^1.8.1",
+    "underscore": "^1.7.0"
+  },
+  "devDependencies": {
+    "css-brunch": "^1.7.0",
+    "javascript-brunch": "^1.7.1"
+  }
+}
