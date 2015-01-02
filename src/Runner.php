@@ -312,7 +312,7 @@ class Runner extends Server
 
             $testResult->unpackArtefactsDir($absoluteArtefacts);
 
-            file_put_contents($historyFile, json_encode($testData), FILE_APPEND | LOCK_EX);
+            file_put_contents($historyFile, json_encode($testData) . "\n", FILE_APPEND | LOCK_EX);
 
             ftruncate($infoHandle, 0);
             rewind($infoHandle);
