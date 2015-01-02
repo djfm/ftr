@@ -4,7 +4,6 @@ var application = {
         var HomeView = require('./views/home');
         
         this.router = new Router();
-
         this.homeView = new HomeView();
     }
 };

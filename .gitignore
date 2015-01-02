@@ -1,4 +1,5 @@
 vendor
+!reporting/app/vendor
 php_errors.log
 test-history
 node_modules

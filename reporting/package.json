@@ -12,6 +12,7 @@
     "jade-brunch": "^1.8.1",
     "less-brunch": "^1.7.2",
     "minimist": "^1.1.0",
+    "q": "^1.1.2",
     "socket.io": "^1.2.1",
     "stylus-brunch": "^1.8.1",
     "underscore": "^1.7.0"

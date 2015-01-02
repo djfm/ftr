@@ -1,0 +1,19 @@
+.form.form-horizontal
+    .form-group
+        .col-md-6
+            .row
+                label.control-label.col-md-5(for="started-after")   Started after
+                .col-md-7
+                    input.form-control(type="datetime-local", id="started-after")
+        .col-md-6
+            .row
+                label.control-label.col-md-5(for="started-before")   Started before
+                .col-md-7
+                    input.form-control(type="datetime-local", id="started-before")
+    .row
+        .col-md-6.col-md-offset-6
+                .row
+                    .col-md-12
+                        button#filter-button.btn.btn-default.pull-right(type="button")  Filter!
+        
+        

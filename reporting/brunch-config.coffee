@@ -12,3 +12,4 @@ modules:
       path
         .replace /^app\/(?:externals\/)?/, ''
         .replace /-\d+(?:\.\d+)+/, ''
+        .replace /moment-with-locales\.js$/, 'moment.js'

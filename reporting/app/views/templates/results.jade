@@ -1,0 +1,12 @@
+if count <= 0
+    div Sorry, no results yet.
+else
+    div Results: #{count}
+    each pool in pools
+        div.pool
+            div.name= pool.name
+            div.row
+                div.col-md-3    #{pool.status.ok} (#{pool.status.ok_percent}%)
+                div.col-md-3    #{pool.status.ko} (#{pool.status.ko_percent}%)
+                div.col-md-3    #{pool.status.skipped} (#{pool.status.skipped_percent}%)
+                div.col-md-3    #{pool.status.unknown} (#{pool.status.unknown_percent}%)
