@@ -51,8 +51,9 @@ function loadDatabase () {
                 if (!tail) {
                     tail = new Tail(streamFile);
                     tail.on('line', function (line) {
-                        database.push(JSON.parse(line));
-                        io.sockets.emit('database updated', database);
+                        var newResult = JSON.parse(line);
+                        database.push(newResult);
+                        io.sockets.emit('database fragment', newResult);
                     });
                 }
 

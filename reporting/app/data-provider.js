@@ -2,7 +2,7 @@ var io = require('./io-client');
 var _ = require('underscore');
 
 var socket;
-var database;
+var database = [];
 
 var filter = {};
 var firstDate, lastDate, count, pools;
@@ -95,6 +95,12 @@ function connect () {
 
     socket.on('database updated', function (db) {
         database = db;
+        applyFilter();
+        emit('database updated');
+    });
+
+    socket.on('database fragment', function (result) {
+        database.push(result);
         applyFilter();
         emit('database updated');
     });
