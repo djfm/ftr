@@ -18,23 +18,36 @@ function addToPool (result, groupBy) {
 
     if (!pools[id]) {
         pools[id] = {
+            name: name,
             status: {
                 ok: 0,
                 ko: 0,
                 skipped: 0,
                 unknown: 0
             },
-            _results: [],
-            name: name
+            tags: {
+
+            },
+            results: []
         };
     }
 
     var pool = pools[id];
 
-    pool._results.push(result);
+    pool.results.push(result);
+
     if (_.has(pool.status, result.status)) {
         ++pool.status[result.status];
+    } else {
+        ++pool.status.unknown;
     }
+
+    _.each(result.tags, function (value, tag) {
+        if (!_.has(pool.tags, tag)) {
+            pool.tags[tag] = {};
+        }
+        pool.tags[tag][value] = true;
+    });
 }
 
 function percentize (object) {
@@ -52,6 +65,14 @@ function percentize (object) {
         object[key + '_percent'] = (100 * object[key] / sum).toFixed(2);
     });
 
+}
+
+function sortTags (pool) {
+    pool.tags = _.map(pool.tags, function (values, tag) {
+        return {tag: tag, values: _.keys(values).sort()};
+    }).sort(function (a, b) {
+        return a.tag > b.tag;
+    });
 }
 
 function applyFilter () {
@@ -87,6 +108,7 @@ function applyFilter () {
 
     _.each(pools, function (pool) {
         percentize(pool.status);
+        sortTags(pool);
     });
 }
 

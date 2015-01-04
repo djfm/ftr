@@ -182,23 +182,36 @@ function addToPool (result, groupBy) {
 
     if (!pools[id]) {
         pools[id] = {
+            name: name,
             status: {
                 ok: 0,
                 ko: 0,
                 skipped: 0,
                 unknown: 0
             },
-            _results: [],
-            name: name
+            tags: {
+
+            },
+            results: []
         };
     }
 
     var pool = pools[id];
 
-    pool._results.push(result);
+    pool.results.push(result);
+
     if (_.has(pool.status, result.status)) {
         ++pool.status[result.status];
+    } else {
+        ++pool.status.unknown;
     }
+
+    _.each(result.tags, function (value, tag) {
+        if (!_.has(pool.tags, tag)) {
+            pool.tags[tag] = {};
+        }
+        pool.tags[tag][value] = true;
+    });
 }
 
 function percentize (object) {
@@ -216,6 +229,14 @@ function percentize (object) {
         object[key + '_percent'] = (100 * object[key] / sum).toFixed(2);
     });
 
+}
+
+function sortTags (pool) {
+    pool.tags = _.map(pool.tags, function (values, tag) {
+        return {tag: tag, values: _.keys(values).sort()};
+    }).sort(function (a, b) {
+        return a.tag > b.tag;
+    });
 }
 
 function applyFilter () {
@@ -251,6 +272,7 @@ function applyFilter () {
 
     _.each(pools, function (pool) {
         percentize(pool.status);
+        sortTags(pool);
     });
 }
 
@@ -22895,7 +22917,80 @@ buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : ja
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
+if ( pool.tags && pool.tags.length > 0)
+{
+buf.push("<div>   Tags</div>");
+// iterate pool.tags
+;(function(){
+  var $$obj = pool.tags;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var tag = $$obj[$index];
+
+buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+// iterate tag.values
+;(function(){
+  var $$obj = tag.values;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var tag = $$obj[$index];
+
+buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+// iterate tag.values
+;(function(){
+  var $$obj = tag.values;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+    }
+
+  }
+}).call(this);
+
+}
+buf.push("<hr/></div>");
     }
 
   } else {
@@ -22903,7 +22998,80 @@ buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade
     for (var $index in $$obj) {
       $$l++;      var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
+if ( pool.tags && pool.tags.length > 0)
+{
+buf.push("<div>   Tags</div>");
+// iterate pool.tags
+;(function(){
+  var $$obj = pool.tags;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var tag = $$obj[$index];
+
+buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+// iterate tag.values
+;(function(){
+  var $$obj = tag.values;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var tag = $$obj[$index];
+
+buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+// iterate tag.values
+;(function(){
+  var $$obj = tag.values;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var value = $$obj[$index];
+
+buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+    }
+
+  }
+}).call(this);
+
+}
+buf.push("<hr/></div>");
     }
 
   }

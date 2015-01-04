@@ -6331,8 +6331,13 @@ button.close {
 }
 /*# sourceMappingURL=bootstrap.css.map */
 
+body {
+  font-family: monospace;
+}
 .kpis-container {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .kpi {
   flex-grow: 1;
@@ -6356,6 +6361,25 @@ button.close {
 }
 .kpi.interval_1 {
   background-color: #fcc;
+}
+.tags-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tag {
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  text-align: center;
+  margin: 3px;
+  padding: 3px;
+  background-color: #eee;
+}
+.tag:hover {
+  cursor: pointer;
+}
+.tag-label {
+  font-weight: bold;
 }
 
 
