@@ -2,6 +2,7 @@ var express = require('express');
 var fs = require('fs');
 var path = require('path');
 var q = require('q');
+var Tail = require('tail').Tail;
 var _ = require('underscore');
 
 var argv = require('minimist')(process.argv.slice(2));
@@ -13,7 +14,9 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
-var database, databaseLoading;
+var database, databaseLoading, tail;
+
+var streamFile = path.join(folder, 'test-history', 'history.json.stream');
 
 function loadDatabase () {
     if (database) {
@@ -21,16 +24,39 @@ function loadDatabase () {
     } else if (databaseLoading) {
         return databaseLoading;
     }else {
-        databaseLoading = q.defer();
-        var streamFile = path.join(folder, 'test-history', 'history.json.stream');
+        var d = q.defer();
+        databaseLoading = d.promise;
+
+        if (!fs.existsSync(path.dirname(streamFile))) {
+            fs.mkdirSync(path.dirname(streamFile));
+        }
+
+        if (!fs.existsSync(streamFile)) {
+            fs.writeFileSync(streamFile, '');
+        }
+
         fs.readFile(streamFile, function (err, data) {
             if (err) {
-                databaseLoading.reject(err);
+                d.reject(err);
             } else {
-                database = _.map(data.toString().split("\n"), function (line) {
-                    return JSON.parse(line);
+                database = [];
+                _.each(data.toString().split("\n"), function (line) {
+                    try {
+                        database.push(JSON.parse(line));
+                    } catch (e){
+                        // ignore invalid line
+                    }
                 });
-                databaseLoading.resolve(database);
+
+                if (!tail) {
+                    tail = new Tail(streamFile);
+                    tail.on('line', function (line) {
+                        database.push(JSON.parse(line));
+                        io.sockets.emit('database updated', database);
+                    });
+                }
+
+                d.resolve(database);
             }
             databaseLoading = undefined;
         });
@@ -42,6 +68,7 @@ loadDatabase();
 
 io.on('connection', function (socket) {
     loadDatabase().then(function (database) {
+        console.log(database);
         socket.emit('database updated', database);
     }).fail(function (reason) {
         socket.emit('database update failed', reason.toString());
