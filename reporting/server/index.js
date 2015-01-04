@@ -23,7 +23,7 @@ function loadDatabase () {
         return q(database);
     } else if (databaseLoading) {
         return databaseLoading;
-    }else {
+    } else {
         var d = q.defer();
         databaseLoading = d.promise;
 
@@ -68,7 +68,6 @@ loadDatabase();
 
 io.on('connection', function (socket) {
     loadDatabase().then(function (database) {
-        console.log(database);
         socket.emit('database updated', database);
     }).fail(function (reason) {
         socket.emit('database update failed', reason.toString());
