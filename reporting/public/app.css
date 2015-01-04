@@ -6331,6 +6331,32 @@ button.close {
 }
 /*# sourceMappingURL=bootstrap.css.map */
 
+.kpis-container {
+  display: flex;
+}
+.kpi {
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  margin: 5px;
+  padding: 15px;
+  text-align: center;
+  border-radius: 5px;
+}
+.kpi.interval_5 {
+  background-color: #cfc;
+}
+.kpi.interval_4 {
+  background-color: #efe;
+}
+.kpi.interval_3 {
+  background-color: #ffe;
+}
+.kpi.interval_2 {
+  background-color: #fee;
+}
+.kpi.interval_1 {
+  background-color: #fcc;
+}
 
 
 /*# sourceMappingURL=app.css.map*/

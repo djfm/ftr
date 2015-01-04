@@ -14,9 +14,10 @@
     "minimist": "^1.1.0",
     "q": "^1.1.2",
     "socket.io": "^1.2.1",
-    "stylus-brunch": "^1.8.1",
+    "stylus-brunch": "~1.8.1",
     "underscore": "^1.7.0",
-    "tail": "~0.4.0"
+    "tail": "~0.4.0",
+    "auto-reload-brunch": "~1.7.5"
   },
   "devDependencies": {
     "css-brunch": "^1.7.0",

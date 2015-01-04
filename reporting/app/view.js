@@ -1,6 +1,8 @@
 var Backbone = require('backbone');
 var _ = require('underscore');
 
+var viewHelpers = require('./lib/view.helpers');
+
 module.exports = Backbone.View.extend({
     initialize: function initialize () {
 
@@ -21,6 +23,6 @@ module.exports = Backbone.View.extend({
     },
     renderTemplate: function renderTemplate (data, template) {
         template = template || this.template;
-        return template(data);
+        return template(_.defaults(data, viewHelpers));
     }
 });

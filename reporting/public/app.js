@@ -90,6 +90,62 @@
   globals.require.list = list;
   globals.require.brunch = true;
 })();
+(function() {
+  var WebSocket = window.WebSocket || window.MozWebSocket;
+  var br = window.brunch = (window.brunch || {});
+  var ar = br['auto-reload'] = (br['auto-reload'] || {});
+  if (!WebSocket || ar.disabled) return;
+
+  var cacheBuster = function(url){
+    var date = Math.round(Date.now() / 1000).toString();
+    url = url.replace(/(\&|\\?)cacheBuster=\d*/, '');
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') +'cacheBuster=' + date;
+  };
+
+  var reloaders = {
+    page: function(){
+      window.location.reload(true);
+    },
+
+    stylesheet: function(){
+      [].slice
+        .call(document.querySelectorAll('link[rel="stylesheet"]'))
+        .filter(function(link){
+          return (link != null && link.href != null);
+        })
+        .forEach(function(link) {
+          link.href = cacheBuster(link.href);
+        });
+
+      // hack to force page repaint
+      var el = document.body;
+      var bodyDisplay = el.style.display || 'block';
+      el.style.display = 'none';
+      el.offsetHeight;
+      el.style.display = bodyDisplay;
+    }
+  };
+  var port = ar.port || 9485;
+  var host = br.server || window.location.hostname;
+
+  var connect = function(){
+    var connection = new WebSocket('ws://' + host + ':' + port);
+    connection.onmessage = function(event){
+      if (ar.disabled) return;
+      var message = event.data;
+      var reloader = reloaders[message] || reloaders.page;
+      reloader();
+    };
+    connection.onerror = function(){
+      if (connection.readyState) connection.close();
+    };
+    connection.onclose = function(){
+      window.setTimeout(connect, 1000);
+    };
+  };
+  connect();
+})();
+
 require.register("application", function(exports, require, module) {
 var application = {
     initialize: function () {
@@ -22546,6 +22602,66 @@ exports.dateAsTimestamp = dateAsTimestamp;
 
 });
 
+require.register("lib/view.helpers", function(exports, require, module) {
+function interval (value, worst, best, n) {
+
+    n = n || 5;
+
+    var invert = worst > best;
+
+    if (invert) {
+        var tmp = worst;
+        worst = best;
+        best = tmp;
+    }
+
+    if (value < worst) {
+        value = worst;
+    }
+
+    if (value > best) {
+        value = best;
+    }
+
+    worst = worst || 0;
+    best  = best || 100;
+
+    var q;
+
+    if (value === worst) {
+        q = 1;
+    }
+
+    if (value === best) {
+        q = n;
+    }
+
+
+    if (q === undefined) {
+        q = Math.ceil(n * (value - worst) / (best - worst));
+    }
+
+    if (q > n) {
+        q = n;
+    }
+
+    if (q <= 0) {
+        q = 1;
+    }
+
+    if (invert) {
+        q = n - q + 1;
+    }
+
+    return "interval_" + q;
+}
+
+module.exports = {
+    interval: interval
+};
+
+});
+
 require.register("models/filter_model", function(exports, require, module) {
 var Backbone = require('backbone');
 var moment = require('moment');
@@ -22596,6 +22712,8 @@ require.register("view", function(exports, require, module) {
 var Backbone = require('backbone');
 var _ = require('underscore');
 
+var viewHelpers = require('./lib/view.helpers');
+
 module.exports = Backbone.View.extend({
     initialize: function initialize () {
 
@@ -22616,7 +22734,7 @@ module.exports = Backbone.View.extend({
     },
     renderTemplate: function renderTemplate (data, template) {
         template = template || this.template;
-        return template(data);
+        return template(_.defaults(data, viewHelpers));
     }
 });
 
@@ -22755,7 +22873,7 @@ var __templateData = function template(locals) {
 var buf = [];
 var jade_mixins = {};
 var jade_interp;
-var locals_ = (locals || {}),count = locals_.count,pools = locals_.pools;
+var locals_ = (locals || {}),count = locals_.count,pools = locals_.pools,interval = locals_.interval;
 if ( count <= 0)
 {
 buf.push("<div>Sorry, no results yet.</div>");
@@ -22771,7 +22889,7 @@ buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : ja
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"row\"><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
     }
 
   } else {
@@ -22779,7 +22897,7 @@ buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade
     for (var $index in $$obj) {
       $$l++;      var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"row\"><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div class=\"col-md-3\">   " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div></div>");
     }
 
   }
