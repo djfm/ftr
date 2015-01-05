@@ -207,6 +207,11 @@ function addToPool (result, groupBy) {
     }
 
     _.each(result.tags, function (value, tag) {
+
+        if (typeof value === 'object') {
+            return;
+        }
+
         if (!_.has(pool.tags, tag)) {
             pool.tags[tag] = {};
         }
