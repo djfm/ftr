@@ -224,10 +224,7 @@ function removeDrillDownFilter (toRemove) {
     applyFilter();
 }
 
-function addToPool (result, groupBy, getName) {
-    var id = groupBy(result);
-    var name = getName(result);
-
+function addToPool (result, id, name) {
     if (!pools[id]) {
         pools[id] = {
             name: name,
@@ -298,14 +295,6 @@ function applyFilter () {
     firstDate = lastDate = undefined;
     pools = {};
 
-    function groupBy (result) {
-        return result.identifierHierarchy.join(' :: ');
-    }
-
-    function getName (result) {
-        return result.identifierHierarchy.join(' :: ');
-    }
-
     _.each(database, function (result) {
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
@@ -320,6 +309,16 @@ function applyFilter () {
             return;
         }
 
+        var name = result.identifierHierarchy.join(' :: ');
+        var id = result.identifierHierarchy.join(' :: ');
+
+        if (groupBy[name]) {
+            _.each(groupBy[name], function (tag) {
+                id += ' ' + result.tags[tag];
+            });
+        }
+
+
         for (var i = 0, len = filter.drillDown.length; i < len; ++i) {
             var condition = filter.drillDown[i];
             if (condition.type === 'name') {
@@ -327,7 +326,7 @@ function applyFilter () {
                     return;
                 }
             } else if (condition.type === 'tag') {
-                if (condition.pool !== getName(result)) {
+                if (condition.pool !== name) {
                     continue;
                 }
                 if (result.tags[condition.tag] !== condition.value) {
@@ -339,7 +338,7 @@ function applyFilter () {
         firstDate = firstDate ? Math.min(firstDate, result.startedAt) : result.startedAt;
         lastDate = lastDate ? Math.max(lastDate, result.startedAt) : result.startedAt;
 
-        addToPool(result, groupBy, getName);
+        addToPool(result, id, name);
 
         ++count;
     });
@@ -23038,6 +23037,9 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 var locals_ = (locals || {}),drillDown = locals_.drillDown;
+if ( drillDown.length > 0)
+{
+buf.push("<div class=\"filter-label\">Filters enabled:</div>");
 // iterate drillDown
 ;(function(){
   var $$obj = drillDown;
@@ -23046,7 +23048,7 @@ var locals_ = (locals || {}),drillDown = locals_.drillDown;
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var filter = $$obj[$index];
 
-buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
+buf.push("<div class=\"filter\"><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
     }
 
   } else {
@@ -23054,12 +23056,13 @@ buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " clas
     for (var $index in $$obj) {
       $$l++;      var filter = $$obj[$index];
 
-buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
+buf.push("<div class=\"filter\"><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
     }
 
   }
 }).call(this);
-;return buf.join("");
+
+};return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -23078,6 +23081,9 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 var locals_ = (locals || {}),groupBy = locals_.groupBy;
+if ( Object.keys(groupBy).length > 0)
+{
+buf.push("<div class=\"filter-label\">Group by:</div>");
 // iterate groupBy
 ;(function(){
   var $$obj = groupBy;
@@ -23145,7 +23151,8 @@ buf.push("</div>");
 
   }
 }).call(this);
-;return buf.join("");
+
+};return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -23232,7 +23239,7 @@ buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value:
 buf.push("</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
-buf.push("<div>   Tags</div>");
+buf.push("<div>   Tags (click on name to add a group by condition, clik on value to add a filter)</div>");
 // iterate pool.tags
 ;(function(){
   var $$obj = pool.tags;
@@ -23344,7 +23351,7 @@ buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value:
 buf.push("</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
-buf.push("<div>   Tags</div>");
+buf.push("<div>   Tags (click on name to add a group by condition, clik on value to add a filter)</div>");
 // iterate pool.tags
 ;(function(){
   var $$obj = pool.tags;

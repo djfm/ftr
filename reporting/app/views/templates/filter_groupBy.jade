@@ -1,7 +1,9 @@
-each tags, pool in groupBy
-    div.group-by
-        span= pool
-        each tag in tags
-            span.tag
-                span.remove.remove-group-by(data-by={pool: pool, tag: tag}) [X]
-                span= tag
+if Object.keys(groupBy).length > 0
+    div.filter-label Group by:
+    each tags, pool in groupBy
+        div.group-by
+            span= pool
+            each tag in tags
+                span.tag
+                    span.remove.remove-group-by(data-by={pool: pool, tag: tag}) [X]
+                    span= tag

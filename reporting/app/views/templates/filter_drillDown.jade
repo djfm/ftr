@@ -1,4 +1,6 @@
-each filter in drillDown
-    div
-        span.remove.remove-filter(data-filter=filter) [X]
-        span= filter.displayName
+if drillDown.length > 0
+    div.filter-label Filters enabled:
+    each filter in drillDown
+        div.filter
+            span.remove.remove-filter(data-filter=filter) [X]
+            span= filter.displayName

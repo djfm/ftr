@@ -60,10 +60,7 @@ function removeDrillDownFilter (toRemove) {
     applyFilter();
 }
 
-function addToPool (result, groupBy, getName) {
-    var id = groupBy(result);
-    var name = getName(result);
-
+function addToPool (result, id, name) {
     if (!pools[id]) {
         pools[id] = {
             name: name,
@@ -134,14 +131,6 @@ function applyFilter () {
     firstDate = lastDate = undefined;
     pools = {};
 
-    function groupBy (result) {
-        return result.identifierHierarchy.join(' :: ');
-    }
-
-    function getName (result) {
-        return result.identifierHierarchy.join(' :: ');
-    }
-
     _.each(database, function (result) {
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
@@ -156,6 +145,16 @@ function applyFilter () {
             return;
         }
 
+        var name = result.identifierHierarchy.join(' :: ');
+        var id = result.identifierHierarchy.join(' :: ');
+
+        if (groupBy[name]) {
+            _.each(groupBy[name], function (tag) {
+                id += ' ' + result.tags[tag];
+            });
+        }
+
+
         for (var i = 0, len = filter.drillDown.length; i < len; ++i) {
             var condition = filter.drillDown[i];
             if (condition.type === 'name') {
@@ -163,7 +162,7 @@ function applyFilter () {
                     return;
                 }
             } else if (condition.type === 'tag') {
-                if (condition.pool !== getName(result)) {
+                if (condition.pool !== name) {
                     continue;
                 }
                 if (result.tags[condition.tag] !== condition.value) {
@@ -175,7 +174,7 @@ function applyFilter () {
         firstDate = firstDate ? Math.min(firstDate, result.startedAt) : result.startedAt;
         lastDate = lastDate ? Math.max(lastDate, result.startedAt) : result.startedAt;
 
-        addToPool(result, groupBy, getName);
+        addToPool(result, id, name);
 
         ++count;
     });

@@ -6391,6 +6391,14 @@ span.remove {
 .tag-label {
   font-weight: bold;
 }
+.filter-label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+div.group-by,
+div.filter {
+  margin-bottom: 5px;
+}
 
 
 /*# sourceMappingURL=app.css.map*/
