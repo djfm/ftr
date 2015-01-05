@@ -17,10 +17,15 @@ module.exports = View.extend({
         this.render();
     },
     events: {
-        'click .add-filter': 'addFilter'
+        'click .add-filter': 'addFilter',
+        'click .add-group-by': 'addGroupBy'
     },
     addFilter: function (event) {
         var filter = this.$(event.target).data('filter');
         dataProvider.addDrillDownFilter(filter);
+    },
+    addGroupBy: function (event) {
+        var by = this.$(event.target).data('by');
+        dataProvider.addGroupBy(by);
     }
 });

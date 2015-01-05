@@ -19,7 +19,7 @@ else
                 div    Tags
                 each tag in pool.tags
                     div.tags-container
-                        div.tag-label= tag.tag
+                        div.tag-label.add-group-by(data-by={pool: pool.name, tag: tag.tag})= tag.tag
                         each value in tag.values
                             div.tag.add-filter(data-filter={type: 'tag', tag: tag.tag, value: value, pool: pool.name})= value
             hr

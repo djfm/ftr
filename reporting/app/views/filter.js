@@ -32,6 +32,7 @@ module.exports = View.extend({
                 that.filter.set('startedBefore', dataProvider.getLastDate());
             }
             that.filter.set('drillDown', dataProvider.getFilter().drillDown);
+            that.filter.set('groupBy', dataProvider.getGroupBy());
         });
 
     },
@@ -56,6 +57,13 @@ module.exports = View.extend({
                 });
                 $el.html(this.renderTemplate({drillDown: drillDown}, require('./templates/filter_drillDown')));
             }
+        },
+        '#group-by': {
+            observe: 'groupBy',
+            updateModel: false,
+            update: function ($el, groupBy) {
+                $el.html(this.renderTemplate({groupBy: groupBy}, require('./templates/filter_groupBy')));
+            }
         }
     },
     events: {
@@ -66,6 +74,10 @@ module.exports = View.extend({
         'click .remove-filter': function removeFilter (event) {
             var filter = this.$(event.target).data('filter');
             dataProvider.removeDrillDownFilter(filter);
+        },
+        'click .remove-group-by': function removeGroupBy (event) {
+            var by = this.$(event.target).data('by');
+            dataProvider.removeGroupBy(by);
         }
     }
 });

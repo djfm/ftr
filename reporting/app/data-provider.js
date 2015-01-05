@@ -7,6 +7,11 @@ var database = [];
 var filter = {
     drillDown: []
 };
+
+var groupBy = {
+
+};
+
 var firstDate, lastDate, count, pools;
 
 function updateFilter (f) {
@@ -16,6 +21,35 @@ function updateFilter (f) {
 
 function addDrillDownFilter (f) {
     filter.drillDown.push(f);
+    applyFilter();
+}
+
+function addGroupBy (by) {
+    if (!_.has(groupBy, by.pool)) {
+        groupBy[by.pool] = [];
+    }
+    if (_.indexOf(groupBy[by.pool], by.tag) === -1) {
+        groupBy[by.pool].push(by.tag);
+        applyFilter();
+    }
+}
+
+function removeGroupBy (by) {
+    if (!_.has(groupBy, by.pool)) {
+        return;
+    }
+    var pos = _.indexOf(groupBy[by.pool], by.tag);
+
+    if (pos === -1) {
+        return;
+    }
+
+    groupBy[by.pool].splice(pos, 1);
+
+    if (groupBy[by.pool].length === 0) {
+        delete groupBy[by.pool];
+    }
+
     applyFilter();
 }
 
@@ -220,3 +254,13 @@ exports.autoupdate = function (auto) {
 
 exports.addDrillDownFilter = addDrillDownFilter;
 exports.removeDrillDownFilter = removeDrillDownFilter;
+exports.addGroupBy = addGroupBy;
+exports.removeGroupBy = removeGroupBy;
+
+exports.getGroupBy = function () {
+    var gb = _.clone(groupBy);
+    _.each(gb, function (tags, pool) {
+        gb[pool] = _.clone(tags);
+    });
+    return gb;
+};

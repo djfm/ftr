@@ -6335,7 +6335,8 @@ body {
   font-family: monospace;
 }
 a,
-.add-filter {
+.add-filter,
+.add-group-by {
   cursor: pointer;
 }
 span.remove {

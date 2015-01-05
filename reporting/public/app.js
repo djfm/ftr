@@ -171,6 +171,11 @@ var database = [];
 var filter = {
     drillDown: []
 };
+
+var groupBy = {
+
+};
+
 var firstDate, lastDate, count, pools;
 
 function updateFilter (f) {
@@ -180,6 +185,35 @@ function updateFilter (f) {
 
 function addDrillDownFilter (f) {
     filter.drillDown.push(f);
+    applyFilter();
+}
+
+function addGroupBy (by) {
+    if (!_.has(groupBy, by.pool)) {
+        groupBy[by.pool] = [];
+    }
+    if (_.indexOf(groupBy[by.pool], by.tag) === -1) {
+        groupBy[by.pool].push(by.tag);
+        applyFilter();
+    }
+}
+
+function removeGroupBy (by) {
+    if (!_.has(groupBy, by.pool)) {
+        return;
+    }
+    var pos = _.indexOf(groupBy[by.pool], by.tag);
+
+    if (pos === -1) {
+        return;
+    }
+
+    groupBy[by.pool].splice(pos, 1);
+
+    if (groupBy[by.pool].length === 0) {
+        delete groupBy[by.pool];
+    }
+
     applyFilter();
 }
 
@@ -384,6 +418,16 @@ exports.autoupdate = function (auto) {
 
 exports.addDrillDownFilter = addDrillDownFilter;
 exports.removeDrillDownFilter = removeDrillDownFilter;
+exports.addGroupBy = addGroupBy;
+exports.removeGroupBy = removeGroupBy;
+
+exports.getGroupBy = function () {
+    var gb = _.clone(groupBy);
+    _.each(gb, function (tags, pool) {
+        gb[pool] = _.clone(tags);
+    });
+    return gb;
+};
 
 });
 
@@ -22750,13 +22794,13 @@ module.exports = {
 
 require.register("models/filter_model", function(exports, require, module) {
 var Backbone = require('backbone');
-var moment = require('moment');
 
 module.exports = Backbone.Model.extend({
     initialize: function () {
     },
     defaults: {
         drillDown: [],
+        groupBy: [],
         startedAfter: null,
         startedBefore: null
     }
@@ -22866,6 +22910,7 @@ module.exports = View.extend({
                 that.filter.set('startedBefore', dataProvider.getLastDate());
             }
             that.filter.set('drillDown', dataProvider.getFilter().drillDown);
+            that.filter.set('groupBy', dataProvider.getGroupBy());
         });
 
     },
@@ -22890,6 +22935,13 @@ module.exports = View.extend({
                 });
                 $el.html(this.renderTemplate({drillDown: drillDown}, require('./templates/filter_drillDown')));
             }
+        },
+        '#group-by': {
+            observe: 'groupBy',
+            updateModel: false,
+            update: function ($el, groupBy) {
+                $el.html(this.renderTemplate({groupBy: groupBy}, require('./templates/filter_groupBy')));
+            }
         }
     },
     events: {
@@ -22900,6 +22952,10 @@ module.exports = View.extend({
         'click .remove-filter': function removeFilter (event) {
             var filter = this.$(event.target).data('filter');
             dataProvider.removeDrillDownFilter(filter);
+        },
+        'click .remove-group-by': function removeGroupBy (event) {
+            var by = this.$(event.target).data('by');
+            dataProvider.removeGroupBy(by);
         }
     }
 });
@@ -22942,11 +22998,16 @@ module.exports = View.extend({
         this.render();
     },
     events: {
-        'click .add-filter': 'addFilter'
+        'click .add-filter': 'addFilter',
+        'click .add-group-by': 'addGroupBy'
     },
     addFilter: function (event) {
         var filter = this.$(event.target).data('filter');
         dataProvider.addDrillDownFilter(filter);
+    },
+    addGroupBy: function (event) {
+        var by = this.$(event.target).data('by');
+        dataProvider.addGroupBy(by);
     }
 });
 
@@ -22958,7 +23019,7 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 
-buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-5\">  Started after</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-5\">  Started before</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div id=\"drill-down\"></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
+buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-5\">  Started after</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-5\">  Started before</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div id=\"drill-down\"></div><div id=\"group-by\"></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -22994,6 +23055,92 @@ buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " clas
       $$l++;      var filter = $$obj[$index];
 
 buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
+    }
+
+  }
+}).call(this);
+;return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
+;require.register("views/templates/filter_groupBy", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),groupBy = locals_.groupBy;
+// iterate groupBy
+;(function(){
+  var $$obj = groupBy;
+  if ('number' == typeof $$obj.length) {
+
+    for (var pool = 0, $$l = $$obj.length; pool < $$l; pool++) {
+      var tags = $$obj[pool];
+
+buf.push("<div class=\"group-by\"><span>" + (jade.escape(null == (jade_interp = pool) ? "" : jade_interp)) + "</span>");
+// iterate tags
+;(function(){
+  var $$obj = tags;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var tag = $$obj[$index];
+
+buf.push("<span class=\"tag\"><span" + (jade.attr("data-by", {pool: pool, tag: tag}, true, false)) + " class=\"remove remove-group-by\">[X]</span><span>" + (jade.escape(null == (jade_interp = tag) ? "" : jade_interp)) + "</span></span>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var tag = $$obj[$index];
+
+buf.push("<span class=\"tag\"><span" + (jade.attr("data-by", {pool: pool, tag: tag}, true, false)) + " class=\"remove remove-group-by\">[X]</span><span>" + (jade.escape(null == (jade_interp = tag) ? "" : jade_interp)) + "</span></span>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var pool in $$obj) {
+      $$l++;      var tags = $$obj[pool];
+
+buf.push("<div class=\"group-by\"><span>" + (jade.escape(null == (jade_interp = pool) ? "" : jade_interp)) + "</span>");
+// iterate tags
+;(function(){
+  var $$obj = tags;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var tag = $$obj[$index];
+
+buf.push("<span class=\"tag\"><span" + (jade.attr("data-by", {pool: pool, tag: tag}, true, false)) + " class=\"remove remove-group-by\">[X]</span><span>" + (jade.escape(null == (jade_interp = tag) ? "" : jade_interp)) + "</span></span>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var tag = $$obj[$index];
+
+buf.push("<span class=\"tag\"><span" + (jade.attr("data-by", {pool: pool, tag: tag}, true, false)) + " class=\"remove remove-group-by\">[X]</span><span>" + (jade.escape(null == (jade_interp = tag) ? "" : jade_interp)) + "</span></span>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
     }
 
   }
@@ -23094,7 +23241,7 @@ buf.push("<div>   Tags</div>");
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var tag = $$obj[$index];
 
-buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: pool.name, tag: tag.tag}, true, false)) + " class=\"tag-label add-group-by\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
 // iterate tag.values
 ;(function(){
   var $$obj = tag.values;
@@ -23125,7 +23272,7 @@ buf.push("</div>");
     for (var $index in $$obj) {
       $$l++;      var tag = $$obj[$index];
 
-buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: pool.name, tag: tag.tag}, true, false)) + " class=\"tag-label add-group-by\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
 // iterate tag.values
 ;(function(){
   var $$obj = tag.values;
@@ -23206,7 +23353,7 @@ buf.push("<div>   Tags</div>");
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var tag = $$obj[$index];
 
-buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: pool.name, tag: tag.tag}, true, false)) + " class=\"tag-label add-group-by\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
 // iterate tag.values
 ;(function(){
   var $$obj = tag.values;
@@ -23237,7 +23384,7 @@ buf.push("</div>");
     for (var $index in $$obj) {
       $$l++;      var tag = $$obj[$index];
 
-buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
+buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: pool.name, tag: tag.tag}, true, false)) + " class=\"tag-label add-group-by\">" + (jade.escape(null == (jade_interp = tag.tag) ? "" : jade_interp)) + "</div>");
 // iterate tag.values
 ;(function(){
   var $$obj = tag.values;
