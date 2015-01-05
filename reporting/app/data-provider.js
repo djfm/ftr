@@ -74,7 +74,8 @@ function addToPool (result, id, name) {
             tags: {
 
             },
-            results: []
+            results: [],
+            exceptions: {}
         };
     }
 
@@ -97,7 +98,31 @@ function addToPool (result, id, name) {
         if (!_.has(pool.tags, tag)) {
             pool.tags[tag] = {};
         }
-        pool.tags[tag][value] = true;
+
+        if (!_.has(pool.tags[tag], value)) {
+            pool.tags[tag][value] = {
+                total: 0,
+                ok: 0
+            };
+        }
+        ++pool.tags[tag][value].total;
+        if (result.status === 'ok') {
+            ++pool.tags[tag][value].ok;
+        }
+
+        pool.tags[tag][value].ok_percent = 100 * pool.tags[tag][value].ok / pool.tags[tag][value].total;
+    });
+
+    _.each(result.exceptions, function (exception) {
+        var id = exception.class + ': '+ exception.message;
+        if (!_.has(pool.exceptions, id)) {
+            pool.exceptions[id] = {
+                class: exception.class,
+                message: exception.message,
+                list: []
+            };
+        }
+        pool.exceptions[id].list.push(exception);
     });
 }
 
@@ -122,7 +147,17 @@ function percentize (object) {
 
 function sortTags (pool) {
     pool.tags = _.map(pool.tags, function (values, tag) {
-        return {tag: tag, values: _.keys(values).sort()};
+        return {
+            tag: tag,
+            values: _.map(values, function (data, value) {
+                return {
+                    value: value,
+                    ok_percent: data.ok_percent
+                };
+            }).sort(function (a, b) {
+                return a.ok_percent - b.ok_percent;
+            })
+        };
     }).sort(function (a, b) {
         return a.tag > b.tag;
     });

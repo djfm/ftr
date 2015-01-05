@@ -2,7 +2,6 @@ if count <= 0
     div Sorry, no results yet.
 else
     div Results: #{count}
-    hr
     each pool in pools
         div.pool
             div.name
@@ -22,5 +21,12 @@ else
                     div.tags-container
                         div.tag-label.add-group-by(data-by={pool: pool.name, tag: tag.tag})= tag.tag
                         each value in tag.values
-                            div.tag.add-filter(data-filter={type: 'tag', tag: tag.tag, value: value, pool: pool.name})= value
-            hr
+                            div.tag.add-filter(
+                                data-filter={type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}
+                                class=statusInterval(value.ok_percent, 'ok')
+                            )= value.value
+            if pool.exceptions && Object.keys(pool.exceptions).length > 0
+                each exception in pool.exceptions
+                    div.exception
+                        div <strong>#{exception.list.length} exception(s) like this</strong>: #{exception.class}
+                        div.exception-message.click-to-expand= exception.message

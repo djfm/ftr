@@ -24,5 +24,10 @@ module.exports = Backbone.View.extend({
     renderTemplate: function renderTemplate (data, template) {
         template = template || this.template;
         return template(_.defaults(data, viewHelpers));
+    },
+    events: {
+        'click .click-to-expand': function expandOrMinizize (event) {
+            this.$(event.target).toggleClass('expanded');
+        }
     }
 });

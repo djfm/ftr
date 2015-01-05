@@ -238,7 +238,8 @@ function addToPool (result, id, name) {
             tags: {
 
             },
-            results: []
+            results: [],
+            exceptions: {}
         };
     }
 
@@ -261,7 +262,31 @@ function addToPool (result, id, name) {
         if (!_.has(pool.tags, tag)) {
             pool.tags[tag] = {};
         }
-        pool.tags[tag][value] = true;
+
+        if (!_.has(pool.tags[tag], value)) {
+            pool.tags[tag][value] = {
+                total: 0,
+                ok: 0
+            };
+        }
+        ++pool.tags[tag][value].total;
+        if (result.status === 'ok') {
+            ++pool.tags[tag][value].ok;
+        }
+
+        pool.tags[tag][value].ok_percent = 100 * pool.tags[tag][value].ok / pool.tags[tag][value].total;
+    });
+
+    _.each(result.exceptions, function (exception) {
+        var id = exception.class + ': '+ exception.message;
+        if (!_.has(pool.exceptions, id)) {
+            pool.exceptions[id] = {
+                class: exception.class,
+                message: exception.message,
+                list: []
+            };
+        }
+        pool.exceptions[id].list.push(exception);
     });
 }
 
@@ -286,7 +311,17 @@ function percentize (object) {
 
 function sortTags (pool) {
     pool.tags = _.map(pool.tags, function (values, tag) {
-        return {tag: tag, values: _.keys(values).sort()};
+        return {
+            tag: tag,
+            values: _.map(values, function (data, value) {
+                return {
+                    value: value,
+                    ok_percent: data.ok_percent
+                };
+            }).sort(function (a, b) {
+                return a.ok_percent - b.ok_percent;
+            })
+        };
     }).sort(function (a, b) {
         return a.tag > b.tag;
     });
@@ -22885,6 +22920,11 @@ module.exports = Backbone.View.extend({
     renderTemplate: function renderTemplate (data, template) {
         template = template || this.template;
         return template(_.defaults(data, viewHelpers));
+    },
+    events: {
+        'click .click-to-expand': function expandOrMinizize (event) {
+            this.$(event.target).toggleClass('expanded');
+        }
     }
 });
 
@@ -23034,7 +23074,7 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 
-buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-5\">  Started after</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-5\">  Started before</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div id=\"drill-down\"></div><div id=\"group-by\"></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
+buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-4\">  Started after</label><div class=\"col-md-8\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-4\">  Started before</label><div class=\"col-md-8\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div id=\"drill-down\"></div><div id=\"group-by\"></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -23212,7 +23252,7 @@ buf.push("<div>Sorry, no results yet.</div>");
 }
 else
 {
-buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : jade_interp)) + "</div><hr/>");
+buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : jade_interp)) + "</div>");
 // iterate pools
 ;(function(){
   var $$obj = pools;
@@ -23273,7 +23313,7 @@ buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: poo
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23281,7 +23321,7 @@ buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: v
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23304,7 +23344,7 @@ buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: poo
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23312,7 +23352,7 @@ buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: v
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23325,7 +23365,32 @@ buf.push("</div>");
 }).call(this);
 
 }
-buf.push("<hr/></div>");
+if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
+{
+// iterate pool.exceptions
+;(function(){
+  var $$obj = pool.exceptions;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var exception = $$obj[$index];
+
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var exception = $$obj[$index];
+
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+    }
+
+  }
+}).call(this);
+
+}
+buf.push("</div>");
     }
 
   } else {
@@ -23385,7 +23450,7 @@ buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: poo
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23393,7 +23458,7 @@ buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: v
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23416,7 +23481,7 @@ buf.push("<div class=\"tags-container\"><div" + (jade.attr("data-by", {pool: poo
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23424,7 +23489,7 @@ buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: v
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}, true, false)) + (jade.cls(['tag','add-filter',statusInterval(value.ok_percent, 'ok')], [null,null,true])) + ">" + (jade.escape(null == (jade_interp = value.value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23437,7 +23502,32 @@ buf.push("</div>");
 }).call(this);
 
 }
-buf.push("<hr/></div>");
+if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
+{
+// iterate pool.exceptions
+;(function(){
+  var $$obj = pool.exceptions;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var exception = $$obj[$index];
+
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var exception = $$obj[$index];
+
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+    }
+
+  }
+}).call(this);
+
+}
+buf.push("</div>");
     }
 
   }

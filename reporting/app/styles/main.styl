@@ -1,5 +1,13 @@
 body
     font-family monospace
+    background-color #444
+
+#filter-view
+    background-color white
+    padding 5px
+
+h1
+    color white
 
 a, .add-filter, .add-group-by
     cursor pointer
@@ -23,7 +31,7 @@ span.remove
     border-radius 5px
 
 .kpi.interval_5
-    background-color #CCFFCC
+    background-color #DDFFDD
 
 .kpi.interval_4
     background-color #EEFFEE
@@ -35,7 +43,7 @@ span.remove
     background-color #FFEEEE
 
 .kpi.interval_1
-    background-color #FFCCCC
+    background-color #FFDDDD
 
 .tags-container
     display flex
@@ -48,9 +56,19 @@ span.remove
     text-align center
     margin 3px
     padding 3px
-    background-color #EEE
+    background-color #FFF
     &:hover
         cursor pointer
+    &.interval_1
+        color red
+    &.interval_2
+        color #C11
+    &.interval_3
+        color orange
+    &.interval_4
+        color #1C1
+    &.interval_5
+        color green
 
 .tag-label
     font-weight: bold
@@ -64,3 +82,25 @@ div.group-by, div.filter
 
 span.hierarchy
     font-weight bold
+
+div.click-to-expand
+    overflow hidden
+    text-overflow ellipsis
+    max-height 60px
+    cursor pointer
+
+div.click-to-expand.expanded
+    overflow visible
+    max-height inherit
+
+div.exception
+    margin-bottom 3px
+
+div.exception-message
+    color: #BBB;
+
+div.pool
+    border 1px solid #CCC
+    margin-bottom 5px
+    padding 5px
+    background-color white
