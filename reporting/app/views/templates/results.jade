@@ -30,3 +30,7 @@ else
                     div.exception
                         div <strong>#{exception.list.length} exception(s) like this</strong>: #{exception.class}
                         div.exception-message.click-to-expand= exception.message
+                        div
+                            span details: 
+                            each result, index in exception.results
+                                a.details(href='#/results/'+result.historyId)= index+1

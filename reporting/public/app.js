@@ -176,7 +176,7 @@ var groupBy = {
 
 };
 
-var firstDate, lastDate, count, pools;
+var firstDate, lastDate, count, pools, results = {};
 
 function updateFilter (f) {
     filter = _.extend(filter, f);
@@ -283,10 +283,12 @@ function addToPool (result, id, name) {
             pool.exceptions[id] = {
                 class: exception.class,
                 message: exception.message,
-                list: []
+                list: [],
+                results: []
             };
         }
         pool.exceptions[id].list.push(exception);
+        pool.exceptions[id].results.push(result);
     });
 }
 
@@ -331,8 +333,11 @@ function applyFilter () {
     count = 0;
     firstDate = lastDate = undefined;
     pools = {};
+    results = {};
 
     _.each(database, function (result) {
+
+        results[result.historyId] = result;
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
             return;
@@ -408,9 +413,14 @@ function connect () {
 }
 
 var callbacks = {};
+var oncebacks = {};
 
 function on (eventName, callback) {
     (callbacks[eventName] = callbacks[eventName] || []).push(callback);
+}
+
+function once (eventName, callback) {
+    (oncebacks[eventName] = oncebacks[eventName] || []).push(callback);
 }
 
 function emit (eventName, data) {
@@ -419,10 +429,18 @@ function emit (eventName, data) {
             callbacks[eventName][i](data);
         }
     }
+
+    var callback;
+    if (oncebacks[eventName]) {
+        while ((callback = oncebacks[eventName].shift())) {
+            callback(data);
+        }
+    }
 }
 
 exports.connect = connect;
 exports.on = on;
+exports.once = once;
 exports.updateFilter = updateFilter;
 
 exports.getCount = function () {
@@ -468,6 +486,10 @@ exports.getGroupBy = function () {
         gb[pool] = _.clone(tags);
     });
     return gb;
+};
+
+exports.getResult = function (historyId) {
+    return results[historyId];
 };
 
 });
@@ -22883,11 +22905,35 @@ Backbone.$ = $;
 module.exports = Backbone.Router.extend({
 
     routes: {
-        '': 'home'
+        '': 'home',
+        'results/:historyId': 'result'
     },
 
     home: function () {
         $('body').html(application.homeView.render().el);
+    },
+
+    result: function (historyId) {
+        var ResultView = require('./views/result');
+        var resultView = new ResultView();
+        var dataProvider = require('../data-provider');
+
+        var result = dataProvider.getResult(historyId);
+
+        function render () {
+            resultView.setResult(result);
+            $('body').html(resultView.render().el);
+        }
+
+        if (result) {
+            render();
+        } else {
+            dataProvider.once('change', function () {
+                result = dataProvider.getResult(historyId);
+                render();
+            });
+        }
+
     }
 });
 
@@ -23028,6 +23074,23 @@ module.exports = View.extend({
     afterRender: function () {
         new FilterView({el: this.$('#filter-view')}).render();
         new ResultsView({el: this.$('#results-view')}).render();
+    }
+});
+
+});
+
+require.register("views/result", function(exports, require, module) {
+var View = require('../view');
+
+var dataProvider = require('../data-provider');
+
+module.exports = View.extend({
+    template: require('./templates/result'),
+    initialize: function initializeResultView () {
+        this.model = {};
+    },
+    setResult: function setResult (result) {
+        this.model = result;
     }
 });
 
@@ -23240,6 +23303,25 @@ if (typeof define === 'function' && define.amd) {
 }
 });
 
+;require.register("views/templates/result", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),status = locals_.status;
+buf.push("<div class=\"container\"><h1>Result details</h1><div id=\"result-details\"><div>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</div></div></div>");;return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
 ;require.register("views/templates/results", function(exports, require, module) {
 var __templateData = function template(locals) {
 var buf = [];
@@ -23375,7 +23457,30 @@ if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var exception = $$obj[$index];
 
-buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div><span>details: </span>");
+// iterate exception.results
+;(function(){
+  var $$obj = exception.results;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div></div>");
     }
 
   } else {
@@ -23383,7 +23488,30 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var $index in $$obj) {
       $$l++;      var exception = $$obj[$index];
 
-buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div><span>details: </span>");
+// iterate exception.results
+;(function(){
+  var $$obj = exception.results;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div></div>");
     }
 
   }
@@ -23512,7 +23640,30 @@ if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var exception = $$obj[$index];
 
-buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div><span>details: </span>");
+// iterate exception.results
+;(function(){
+  var $$obj = exception.results;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div></div>");
     }
 
   } else {
@@ -23520,7 +23671,30 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var $index in $$obj) {
       $$l++;      var exception = $$obj[$index];
 
-buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div></div>");
+buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = exception.list.length) == null ? '' : jade_interp)) + " exception(s) like this</strong>: " + (jade.escape((jade_interp = exception.class) == null ? '' : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div><span>details: </span>");
+// iterate exception.results
+;(function(){
+  var $$obj = exception.results;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div></div>");
     }
 
   }

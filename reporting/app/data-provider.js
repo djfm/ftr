@@ -12,7 +12,7 @@ var groupBy = {
 
 };
 
-var firstDate, lastDate, count, pools;
+var firstDate, lastDate, count, pools, results = {};
 
 function updateFilter (f) {
     filter = _.extend(filter, f);
@@ -119,10 +119,12 @@ function addToPool (result, id, name) {
             pool.exceptions[id] = {
                 class: exception.class,
                 message: exception.message,
-                list: []
+                list: [],
+                results: []
             };
         }
         pool.exceptions[id].list.push(exception);
+        pool.exceptions[id].results.push(result);
     });
 }
 
@@ -167,8 +169,11 @@ function applyFilter () {
     count = 0;
     firstDate = lastDate = undefined;
     pools = {};
+    results = {};
 
     _.each(database, function (result) {
+
+        results[result.historyId] = result;
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
             return;
@@ -244,9 +249,14 @@ function connect () {
 }
 
 var callbacks = {};
+var oncebacks = {};
 
 function on (eventName, callback) {
     (callbacks[eventName] = callbacks[eventName] || []).push(callback);
+}
+
+function once (eventName, callback) {
+    (oncebacks[eventName] = oncebacks[eventName] || []).push(callback);
 }
 
 function emit (eventName, data) {
@@ -255,10 +265,18 @@ function emit (eventName, data) {
             callbacks[eventName][i](data);
         }
     }
+
+    var callback;
+    if (oncebacks[eventName]) {
+        while ((callback = oncebacks[eventName].shift())) {
+            callback(data);
+        }
+    }
 }
 
 exports.connect = connect;
 exports.on = on;
+exports.once = once;
 exports.updateFilter = updateFilter;
 
 exports.getCount = function () {
@@ -304,4 +322,8 @@ exports.getGroupBy = function () {
         gb[pool] = _.clone(tags);
     });
     return gb;
+};
+
+exports.getResult = function (historyId) {
+    return results[historyId];
 };

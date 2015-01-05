@@ -6447,6 +6447,12 @@ div.pool {
   padding: 5px;
   background-color: #fff;
 }
+a.details {
+  margin-right: 3px;
+}
+#result-details {
+  background-color: #fff;
+}
 
 
 /*# sourceMappingURL=app.css.map*/
