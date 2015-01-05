@@ -48,9 +48,18 @@ function interval (value, worst, best, n) {
         q = n - q + 1;
     }
 
-    return "interval_" + q;
+    return q;
+}
+
+function statusInterval(value, status) {
+    if (status === 'ok') {
+        return 'interval_' + interval(value, 0, 100);
+    } else {
+        return 'interval_' + interval(value, 100, 0);
+    }
 }
 
 module.exports = {
-    interval: interval
+    interval: interval,
+    statusInterval: statusInterval
 };
