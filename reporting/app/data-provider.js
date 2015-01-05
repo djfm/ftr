@@ -4,21 +4,36 @@ var _ = require('underscore');
 var socket;
 var database = [];
 
-var filter = {};
+var filter = {
+    drillDown: []
+};
 var firstDate, lastDate, count, pools;
 
-function setFilter (f) {
-    filter = f;
+function updateFilter (f) {
+    filter = _.extend(filter, f);
     applyFilter();
 }
 
-function addToPool (result, groupBy) {
+function addDrillDownFilter (f) {
+    filter.drillDown.push(f);
+    applyFilter();
+}
+
+function removeDrillDownFilter (toRemove) {
+    filter.drillDown = _.reject(filter.drillDown, function (currentFilter) {
+        return _.matches(currentFilter)(toRemove);
+    });
+    applyFilter();
+}
+
+function addToPool (result, groupBy, getName) {
     var id = groupBy(result);
-    var name = id;
+    var name = getName(result);
 
     if (!pools[id]) {
         pools[id] = {
             name: name,
+            identifierHierarchy: result.identifierHierarchy,
             status: {
                 ok: 0,
                 ko: 0,
@@ -89,6 +104,10 @@ function applyFilter () {
         return result.identifierHierarchy.join(' :: ');
     }
 
+    function getName (result) {
+        return result.identifierHierarchy.join(' :: ');
+    }
+
     _.each(database, function (result) {
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
@@ -103,10 +122,26 @@ function applyFilter () {
             return;
         }
 
+        for (var i = 0, len = filter.drillDown.length; i < len; ++i) {
+            var condition = filter.drillDown[i];
+            if (condition.type === 'name') {
+                if (result.identifierHierarchy[condition.level] !== condition.value) {
+                    return;
+                }
+            } else if (condition.type === 'tag') {
+                if (condition.pool !== getName(result)) {
+                    continue;
+                }
+                if (result.tags[condition.tag] !== condition.value) {
+                    return;
+                }
+            }
+        }
+
         firstDate = firstDate ? Math.min(firstDate, result.startedAt) : result.startedAt;
         lastDate = lastDate ? Math.max(lastDate, result.startedAt) : result.startedAt;
 
-        addToPool(result, groupBy);
+        addToPool(result, groupBy, getName);
 
         ++count;
     });
@@ -115,6 +150,8 @@ function applyFilter () {
         percentize(pool.status);
         sortTags(pool);
     });
+
+    emit('change');
 }
 
 function connect () {
@@ -123,13 +160,11 @@ function connect () {
     socket.on('database updated', function (db) {
         database = db;
         applyFilter();
-        emit('database updated');
     });
 
     socket.on('database fragment', function (result) {
         database.push(result);
         applyFilter();
-        emit('database updated');
     });
 }
 
@@ -149,8 +184,7 @@ function emit (eventName, data) {
 
 exports.connect = connect;
 exports.on = on;
-exports.emit = emit;
-exports.setFilter = setFilter;
+exports.updateFilter = updateFilter;
 
 exports.getCount = function () {
     return count;
@@ -167,3 +201,22 @@ exports.getLastDate = function () {
 exports.getPools = function () {
     return pools;
 };
+
+exports.getFilter = function () {
+    var f = _.clone(filter);
+    f.drillDown = _.map(filter.drillDown, _.clone);
+    return f;
+};
+
+var autoupdate = true;
+
+exports.autoupdate = function (auto) {
+    if (auto === undefined) {
+        return autoupdate;
+    } else {
+        autoupdate = auto ? true : false;
+    }
+};
+
+exports.addDrillDownFilter = addDrillDownFilter;
+exports.removeDrillDownFilter = removeDrillDownFilter;

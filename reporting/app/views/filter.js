@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var FilterModel = require('../models/filter_model');
 var queryString = require('../lib/query-string');
 var stickitHelpers = require('../lib/stickit.helpers');
@@ -24,24 +26,46 @@ module.exports = View.extend({
         this.autoupdate = true;
 
         var that = this;
-        dataProvider.on('database updated', function () {
-            if (that.autoupdate) {
+        dataProvider.on('change', function onDataProviderChange () {
+            if (dataProvider.autoupdate()) {
                 that.filter.set('startedAfter', dataProvider.getFirstDate());
                 that.filter.set('startedBefore', dataProvider.getLastDate());
-                dataProvider.emit('change');
             }
+            that.filter.set('drillDown', dataProvider.getFilter().drillDown);
         });
 
     },
     bindings: {
         '#started-after': stickitHelpers.dateAsTimestamp('startedAfter'),
-        '#started-before': stickitHelpers.dateAsTimestamp('startedBefore')
+        '#started-before': stickitHelpers.dateAsTimestamp('startedBefore'),
+        '#drill-down': {
+            observe: 'drillDown',
+            updateModel: false,
+            update: function ($el, drillDown) {
+                _.each(drillDown, function (filter) {
+                    if (filter.type === 'name') {
+                        var parts = [];
+                        for (var i = 0; i < filter.level; ++i) {
+                            parts.push('*');
+                        }
+                        parts.push(filter.value);
+                        filter.displayName = parts.join(' :: ');
+                    } else if (filter.type === 'tag') {
+                        filter.displayName = filter.pool + ' [' + filter.tag + ' = ' + filter.value + ']';
+                    }
+                });
+                $el.html(this.renderTemplate({drillDown: drillDown}, require('./templates/filter_drillDown')));
+            }
+        }
     },
     events: {
         'click #filter-button': function filterResults () {
-            this.autoupdate = false;
-            dataProvider.setFilter(this.filter.toJSON());
-            dataProvider.emit('change');
+            dataProvider.autoupdate(false);
+            dataProvider.updateFilter(this.filter.toJSON());
+        },
+        'click .remove-filter': function removeFilter (event) {
+            var filter = this.$(event.target).data('filter');
+            dataProvider.removeDrillDownFilter(filter);
         }
     }
 });

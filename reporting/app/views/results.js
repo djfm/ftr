@@ -15,5 +15,12 @@ module.exports = View.extend({
         this.results.set('pools', dataProvider.getPools());
 
         this.render();
+    },
+    events: {
+        'click .add-filter': 'addFilter'
+    },
+    addFilter: function (event) {
+        var filter = this.$(event.target).data('filter');
+        dataProvider.addDrillDownFilter(filter);
     }
 });

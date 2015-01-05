@@ -168,21 +168,36 @@ var _ = require('underscore');
 var socket;
 var database = [];
 
-var filter = {};
+var filter = {
+    drillDown: []
+};
 var firstDate, lastDate, count, pools;
 
-function setFilter (f) {
-    filter = f;
+function updateFilter (f) {
+    filter = _.extend(filter, f);
     applyFilter();
 }
 
-function addToPool (result, groupBy) {
+function addDrillDownFilter (f) {
+    filter.drillDown.push(f);
+    applyFilter();
+}
+
+function removeDrillDownFilter (toRemove) {
+    filter.drillDown = _.reject(filter.drillDown, function (currentFilter) {
+        return _.matches(currentFilter)(toRemove);
+    });
+    applyFilter();
+}
+
+function addToPool (result, groupBy, getName) {
     var id = groupBy(result);
-    var name = id;
+    var name = getName(result);
 
     if (!pools[id]) {
         pools[id] = {
             name: name,
+            identifierHierarchy: result.identifierHierarchy,
             status: {
                 ok: 0,
                 ko: 0,
@@ -253,6 +268,10 @@ function applyFilter () {
         return result.identifierHierarchy.join(' :: ');
     }
 
+    function getName (result) {
+        return result.identifierHierarchy.join(' :: ');
+    }
+
     _.each(database, function (result) {
 
         if (filter.startedAfter && result.startedAt < filter.startedAfter) {
@@ -267,10 +286,26 @@ function applyFilter () {
             return;
         }
 
+        for (var i = 0, len = filter.drillDown.length; i < len; ++i) {
+            var condition = filter.drillDown[i];
+            if (condition.type === 'name') {
+                if (result.identifierHierarchy[condition.level] !== condition.value) {
+                    return;
+                }
+            } else if (condition.type === 'tag') {
+                if (condition.pool !== getName(result)) {
+                    continue;
+                }
+                if (result.tags[condition.tag] !== condition.value) {
+                    return;
+                }
+            }
+        }
+
         firstDate = firstDate ? Math.min(firstDate, result.startedAt) : result.startedAt;
         lastDate = lastDate ? Math.max(lastDate, result.startedAt) : result.startedAt;
 
-        addToPool(result, groupBy);
+        addToPool(result, groupBy, getName);
 
         ++count;
     });
@@ -279,6 +314,8 @@ function applyFilter () {
         percentize(pool.status);
         sortTags(pool);
     });
+
+    emit('change');
 }
 
 function connect () {
@@ -287,13 +324,11 @@ function connect () {
     socket.on('database updated', function (db) {
         database = db;
         applyFilter();
-        emit('database updated');
     });
 
     socket.on('database fragment', function (result) {
         database.push(result);
         applyFilter();
-        emit('database updated');
     });
 }
 
@@ -313,8 +348,7 @@ function emit (eventName, data) {
 
 exports.connect = connect;
 exports.on = on;
-exports.emit = emit;
-exports.setFilter = setFilter;
+exports.updateFilter = updateFilter;
 
 exports.getCount = function () {
     return count;
@@ -331,6 +365,25 @@ exports.getLastDate = function () {
 exports.getPools = function () {
     return pools;
 };
+
+exports.getFilter = function () {
+    var f = _.clone(filter);
+    f.drillDown = _.map(filter.drillDown, _.clone);
+    return f;
+};
+
+var autoupdate = true;
+
+exports.autoupdate = function (auto) {
+    if (auto === undefined) {
+        return autoupdate;
+    } else {
+        autoupdate = auto ? true : false;
+    }
+};
+
+exports.addDrillDownFilter = addDrillDownFilter;
+exports.removeDrillDownFilter = removeDrillDownFilter;
 
 });
 
@@ -22701,6 +22754,11 @@ var moment = require('moment');
 
 module.exports = Backbone.Model.extend({
     initialize: function () {
+    },
+    defaults: {
+        drillDown: [],
+        startedAfter: null,
+        startedBefore: null
     }
 });
 
@@ -22774,6 +22832,8 @@ module.exports = Backbone.View.extend({
 });
 
 require.register("views/filter", function(exports, require, module) {
+var _ = require('underscore');
+
 var FilterModel = require('../models/filter_model');
 var queryString = require('../lib/query-string');
 var stickitHelpers = require('../lib/stickit.helpers');
@@ -22800,24 +22860,46 @@ module.exports = View.extend({
         this.autoupdate = true;
 
         var that = this;
-        dataProvider.on('database updated', function () {
-            if (that.autoupdate) {
+        dataProvider.on('change', function onDataProviderChange () {
+            if (dataProvider.autoupdate()) {
                 that.filter.set('startedAfter', dataProvider.getFirstDate());
                 that.filter.set('startedBefore', dataProvider.getLastDate());
-                dataProvider.emit('change');
             }
+            that.filter.set('drillDown', dataProvider.getFilter().drillDown);
         });
 
     },
     bindings: {
         '#started-after': stickitHelpers.dateAsTimestamp('startedAfter'),
-        '#started-before': stickitHelpers.dateAsTimestamp('startedBefore')
+        '#started-before': stickitHelpers.dateAsTimestamp('startedBefore'),
+        '#drill-down': {
+            observe: 'drillDown',
+            updateModel: false,
+            update: function ($el, drillDown) {
+                _.each(drillDown, function (filter) {
+                    if (filter.type === 'name') {
+                        var parts = [];
+                        for (var i = 0; i < filter.level; ++i) {
+                            parts.push('*');
+                        }
+                        parts.push(filter.value);
+                        filter.displayName = parts.join(' :: ');
+                    } else if (filter.type === 'tag') {
+                        filter.displayName = filter.pool + ' [' + filter.tag + ' = ' + filter.value + ']';
+                    }
+                });
+                $el.html(this.renderTemplate({drillDown: drillDown}, require('./templates/filter_drillDown')));
+            }
+        }
     },
     events: {
         'click #filter-button': function filterResults () {
-            this.autoupdate = false;
-            dataProvider.setFilter(this.filter.toJSON());
-            dataProvider.emit('change');
+            dataProvider.autoupdate(false);
+            dataProvider.updateFilter(this.filter.toJSON());
+        },
+        'click .remove-filter': function removeFilter (event) {
+            var filter = this.$(event.target).data('filter');
+            dataProvider.removeDrillDownFilter(filter);
         }
     }
 });
@@ -22858,6 +22940,13 @@ module.exports = View.extend({
         this.results.set('pools', dataProvider.getPools());
 
         this.render();
+    },
+    events: {
+        'click .add-filter': 'addFilter'
+    },
+    addFilter: function (event) {
+        var filter = this.$(event.target).data('filter');
+        dataProvider.addDrillDownFilter(filter);
     }
 });
 
@@ -22869,7 +22958,47 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 
-buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-5\">  Started after</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-5\">  Started before</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
+buf.push("<div class=\"form form-horizontal\"><div class=\"form-group\"><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-after\" class=\"control-label col-md-5\">  Started after</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-after\" class=\"form-control\"/></div></div></div><div class=\"col-md-6\"><div class=\"row\"><label for=\"started-before\" class=\"control-label col-md-5\">  Started before</label><div class=\"col-md-7\"><input type=\"datetime-local\" id=\"started-before\" class=\"form-control\"/></div></div></div></div><div id=\"drill-down\"></div><div class=\"row\"><div class=\"col-md-6 col-md-offset-6\"><div class=\"row\"><div class=\"col-md-12\"><button id=\"filter-button\" type=\"button\" class=\"btn btn-default pull-right\"> Filter!</button></div></div></div></div></div>");;return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
+;require.register("views/templates/filter_drillDown", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),drillDown = locals_.drillDown;
+// iterate drillDown
+;(function(){
+  var $$obj = drillDown;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var filter = $$obj[$index];
+
+buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var filter = $$obj[$index];
+
+buf.push("<div><span" + (jade.attr("data-filter", filter, true, false)) + " class=\"remove remove-filter\">[X]</span><span>" + (jade.escape(null == (jade_interp = filter.displayName) ? "" : jade_interp)) + "</span></div>");
+    }
+
+  }
+}).call(this);
+;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -22922,7 +23051,38 @@ buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : ja
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">");
+// iterate pool.identifierHierarchy
+;(function(){
+  var $$obj = pool.identifierHierarchy;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var name = $$obj[index];
+
+if ( index > 0)
+{
+buf.push("&nbsp;::&nbsp;");
+}
+buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value: name}, true, false)) + " class=\"add-filter\">" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</span>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var name = $$obj[index];
+
+if ( index > 0)
+{
+buf.push("&nbsp;::&nbsp;");
+}
+buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value: name}, true, false)) + " class=\"add-filter\">" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</span>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
 buf.push("<div>   Tags</div>");
@@ -22943,7 +23103,7 @@ buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escap
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -22951,7 +23111,7 @@ buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? ""
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -22974,7 +23134,7 @@ buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escap
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -22982,7 +23142,7 @@ buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? ""
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23003,7 +23163,38 @@ buf.push("<hr/></div>");
     for (var $index in $$obj) {
       $$l++;      var pool = $$obj[$index];
 
-buf.push("<div class=\"pool\"><div class=\"name\">" + (jade.escape(null == (jade_interp = pool.name) ? "" : jade_interp)) + "</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
+buf.push("<div class=\"pool\"><div class=\"name\">");
+// iterate pool.identifierHierarchy
+;(function(){
+  var $$obj = pool.identifierHierarchy;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var name = $$obj[index];
+
+if ( index > 0)
+{
+buf.push("&nbsp;::&nbsp;");
+}
+buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value: name}, true, false)) + " class=\"add-filter\">" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</span>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var name = $$obj[index];
+
+if ( index > 0)
+{
+buf.push("&nbsp;::&nbsp;");
+}
+buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value: name}, true, false)) + " class=\"add-filter\">" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</span>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div><div class=\"kpis-container\"><div" + (jade.cls(['kpi',interval(pool.status.ok_percent, 0, 100)], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.ko_percent, 100, 0)], [null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.skipped_percent, 100, 0)], [null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi',interval(pool.status.unknown_percent, 100, 0)], [null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
 buf.push("<div>   Tags</div>");
@@ -23024,7 +23215,7 @@ buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escap
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23032,7 +23223,7 @@ buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? ""
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   }
@@ -23055,7 +23246,7 @@ buf.push("<div class=\"tags-container\"><div class=\"tag-label\">" + (jade.escap
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23063,7 +23254,7 @@ buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? ""
     for (var $index in $$obj) {
       $$l++;      var value = $$obj[$index];
 
-buf.push("<div class=\"tag\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
+buf.push("<div" + (jade.attr("data-filter", {type: 'tag', tag: tag.tag, value: value, pool: pool.name}, true, false)) + " class=\"tag add-filter\">" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</div>");
     }
 
   }
