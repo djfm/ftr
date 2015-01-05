@@ -11,6 +11,7 @@ else
                         &nbsp;::&nbsp;
                     span.add-filter(data-filter={type: 'name', level: index, value: name})= name
             div.kpis-container
+                div.kpi Total: #{pool.status._count}
                 div.kpi(class=interval(pool.status.ok_percent, 0, 100))    OK: #{pool.status.ok} (#{pool.status.ok_percent}%)
                 div.kpi(class=interval(pool.status.ko_percent, 100, 0))    KO: #{pool.status.ko} (#{pool.status.ko_percent}%)
                 div.kpi(class=interval(pool.status.skipped_percent, 100, 0))    Skipped: #{pool.status.skipped} (#{pool.status.skipped_percent}%)

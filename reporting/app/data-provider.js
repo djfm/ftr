@@ -116,6 +116,8 @@ function percentize (object) {
         object[key + '_percent'] = (100 * object[key] / sum).toFixed(2);
     });
 
+    object._count = sum;
+
 }
 
 function sortTags (pool) {
@@ -154,7 +156,6 @@ function applyFilter () {
             });
         }
 
-
         for (var i = 0, len = filter.drillDown.length; i < len; ++i) {
             var condition = filter.drillDown[i];
             if (condition.type === 'name') {
@@ -182,6 +183,12 @@ function applyFilter () {
     _.each(pools, function (pool) {
         percentize(pool.status);
         sortTags(pool);
+    });
+
+    pools = _.map(pools, function (pool) {
+        return pool;
+    }).sort(function (a, b) {
+        return a.status.ok_percent - b.status.ok_percent;
     });
 
     emit('change');
