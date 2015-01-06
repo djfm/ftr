@@ -1,5 +1,9 @@
 var $ = require('jquery');
 
+window.jQuery = $;
+require('zoom/jquery.zoom');
+delete window.jQuery;
+
 var Backbone = require('backbone');
 require('backbone.stickit');
 

@@ -22,6 +22,7 @@ module.exports = View.extend({
                     screenshots: data,
                     lastScreenshot: data[data.length - 1]
                 }, require('./templates/screenshots')));
+                $('div.fullsize').zoom();
             } else {
                 that.$('#screenshots').html('No screenshots, sorry!');
             }
@@ -33,6 +34,7 @@ module.exports = View.extend({
             $('div.thumbnail.selected').removeClass('selected');
             target.closest('div.thumbnail').addClass('selected');
             $('img.fullsize').attr('src', src);
+            $('div.fullsize').zoom();
         }
     }
 });
