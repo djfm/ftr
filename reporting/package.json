@@ -8,16 +8,17 @@
   "author": "djfm",
   "license": "ISC",
   "dependencies": {
+    "auto-reload-brunch": "~1.7.5",
     "express": "^4.10.6",
+    "gm": "^1.17.0",
     "jade-brunch": "^1.8.1",
     "less-brunch": "^1.7.2",
     "minimist": "^1.1.0",
     "q": "^1.1.2",
     "socket.io": "^1.2.1",
     "stylus-brunch": "~1.8.1",
-    "underscore": "^1.7.0",
     "tail": "~0.4.0",
-    "auto-reload-brunch": "~1.7.5"
+    "underscore": "^1.7.0"
   },
   "devDependencies": {
     "css-brunch": "^1.7.0",

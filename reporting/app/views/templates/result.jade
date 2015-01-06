@@ -1,4 +1,11 @@
 .container
     h1 Result details
+    a.btn.btn-default(href="/") << Home
+    br
+    br
     div#result-details
         div Status: #{status}
+        each exception in exceptions
+            div= exception.class
+            div.exception-message.click-to-expand= exception.message
+            #screenshots No screenshots yet...

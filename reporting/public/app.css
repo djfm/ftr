@@ -6452,6 +6452,30 @@ a.details {
 }
 #result-details {
   background-color: #fff;
+  padding: 5px;
+}
+div.thumbnails {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+div.thumbnail {
+  display: inline-block;
+  width: 200px;
+  height: 200px;
+  margin-right: 10px;
+  cursor: pointer;
+  overflow: hidden;
+}
+div.thumbnail.selected {
+  border: 2px solid #000;
+}
+div.fullsize {
+  margin-top: 10px;
+}
+img.fullsize {
+  width: 100%;
 }
 
 

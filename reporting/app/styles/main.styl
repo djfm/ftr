@@ -110,3 +110,26 @@ a.details
 
 #result-details
     background-color white
+    padding 5px
+
+div.thumbnails
+    overflow-x scroll
+    overflow-y hidden
+    white-space nowrap
+    width 100%
+
+div.thumbnail
+    display inline-block
+    width 200px
+    height 200px
+    margin-right 10px
+    cursor pointer
+    overflow hidden
+    &.selected
+        border 2px solid black
+
+div.fullsize
+    margin-top 10px
+
+img.fullsize
+    width 100%

@@ -23082,6 +23082,8 @@ module.exports = View.extend({
 require.register("views/result", function(exports, require, module) {
 var View = require('../view');
 
+var $ = require('jquery');
+
 var dataProvider = require('../data-provider');
 
 module.exports = View.extend({
@@ -23091,6 +23093,29 @@ module.exports = View.extend({
     },
     setResult: function setResult (result) {
         this.model = result;
+    },
+    afterRender: function afterRenderResult () {
+        var that = this;
+        $.get('/screenshots', {
+            root: this.model.artefacts
+        }).then(function (data) {
+            if (data.length > 0) {
+                that.$('#screenshots').html(that.renderTemplate({
+                    screenshots: data,
+                    lastScreenshot: data[data.length - 1]
+                }, require('./templates/screenshots')));
+            } else {
+                that.$('#screenshots').html('No screenshots, sorry!');
+            }
+        });
+    },
+    events: {
+        'click .thumbnail': function (event) {
+            var target = $(event.target), src = target.attr('data-src');
+            $('div.thumbnail.selected').removeClass('selected');
+            target.closest('div.thumbnail').addClass('selected');
+            $('img.fullsize').attr('src', src);
+        }
     }
 });
 
@@ -23308,8 +23333,31 @@ var __templateData = function template(locals) {
 var buf = [];
 var jade_mixins = {};
 var jade_interp;
-var locals_ = (locals || {}),status = locals_.status;
-buf.push("<div class=\"container\"><h1>Result details</h1><div id=\"result-details\"><div>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</div></div></div>");;return buf.join("");
+var locals_ = (locals || {}),status = locals_.status,exceptions = locals_.exceptions;
+buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"result-details\"><div>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</div>");
+// iterate exceptions
+;(function(){
+  var $$obj = exceptions;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var exception = $$obj[$index];
+
+buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div id=\"screenshots\">No screenshots yet...</div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var exception = $$obj[$index];
+
+buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div id=\"screenshots\">No screenshots yet...</div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -23708,6 +23756,48 @@ buf.push("</div>");
 }).call(this);
 
 };return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
+;require.register("views/templates/screenshots", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),screenshots = locals_.screenshots,lastScreenshot = locals_.lastScreenshot;
+buf.push("<div class=\"thumbnails\">");
+// iterate screenshots
+;(function(){
+  var $$obj = screenshots;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var screenshot = $$obj[$index];
+
+buf.push("<div class=\"thumbnail\"><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var screenshot = $$obj[$index];
+
+buf.push("<div class=\"thumbnail\"><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div><div class=\"fullsize\"><img" + (jade.attr("src", lastScreenshot.fullsize, true, false)) + " class=\"fullsize\"/></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {

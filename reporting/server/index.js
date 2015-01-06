@@ -4,6 +4,7 @@ var path = require('path');
 var q = require('q');
 var Tail = require('tail').Tail;
 var _ = require('underscore');
+var gm = require('gm');
 
 var argv = require('minimist')(process.argv.slice(2));
 var port = argv.port || 3000;
@@ -77,6 +78,66 @@ io.on('connection', function (socket) {
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/app/styles', express.static(path.join(__dirname, '..', 'app', 'styles')));
+
+app.get('/screenshots', function (req, res) {
+    var root = req.param('root');
+    var screenshotsDir = path.join(folder, 'test-history', root, 'screenshots');
+    fs.readdir(screenshotsDir, function (err, entries) {
+        var data = [];
+        _.each(entries, function (entry) {
+
+            if (/_\d+x\d+\.\w+$/.exec(entry)) {
+                return;
+            }
+
+            var fullsize = '/artefacts?path=' + encodeURIComponent(path.join(root, 'screenshots', entry));
+
+            data.push({
+                name: path.basename(entry),
+                fullsize: fullsize,
+                thumbnail: fullsize + '&thumbnail=1'
+            });
+        });
+        res.send(data);
+    });
+});
+
+app.get('/artefacts', function (req, res) {
+    var relPath = path.normalize(path.sep + req.param('path')); // this trims all '..' for safety
+    var filePath = path.normalize(path.join(folder, 'test-history', relPath));
+
+    fs.exists(filePath, function (exists) {
+        if (exists) {
+            if (req.param('thumbnail')) {
+                var width = 200, height = 200;
+                var thumbnailFileName = path.join(
+                    path.dirname(filePath),
+                    path.basename(filePath, path.extname(filePath)) + '_' + width + 'x' + height + path.extname(filePath)
+                );
+                fs.exists(thumbnailFileName, function (yes) {
+                    if (yes) {
+                        res.sendFile(thumbnailFileName);
+                    } else {
+                        gm(filePath)
+                        .options({imageMagick: true})
+                        .resize(width, height)
+                        .write(thumbnailFileName, function (err) {
+                            if (err) {
+                                res.status(500).send(err.toString());
+                            } else {
+                                res.sendFile(thumbnailFileName);
+                            }
+                        });
+                    }
+                });
+            } else {
+                res.sendFile(filePath);
+            }
+        } else {
+            res.status(404).send('File not found.');
+        }
+    });
+});
 
 server.listen(port, function () {
     console.log('Reporting viewer listening on port %d', port);

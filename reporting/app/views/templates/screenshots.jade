@@ -1,0 +1,9 @@
+div.thumbnails
+    each screenshot in screenshots
+        div.thumbnail
+            img(
+                src=screenshot.thumbnail
+                data-src=screenshot.fullsize
+            )
+div.fullsize
+    img.fullsize(src=lastScreenshot.fullsize)
