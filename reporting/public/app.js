@@ -23313,8 +23313,14 @@ var ResultsView = require('./results');
 module.exports = View.extend({
     template: require('./templates/home'),
     afterRender: function () {
-        new FilterView({el: this.$('#filter-view')}).render();
-        new ResultsView({el: this.$('#results-view')}).render();
+        this.filterView = this.filterView || new FilterView();
+        this.resultsView = this.resultsView || new ResultsView();
+
+        this.filterView.setElement(this.$('#filter-view'));
+        this.resultsView.setElement(this.$('#results-view'));
+
+        this.filterView.render();
+        this.resultsView.render();
     }
 });
 

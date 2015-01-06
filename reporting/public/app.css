@@ -6391,7 +6391,7 @@ span.remove {
   text-align: center;
   margin: 3px;
   padding: 3px;
-  background-color: #fff;
+  background-color: #fcfcfc;
 }
 .tag:hover {
   cursor: pointer;
@@ -6413,6 +6413,8 @@ span.remove {
 }
 .tag-label {
   font-weight: bold;
+  flex-grow: 0;
+  width: 80;
 }
 .filter-label {
   margin-bottom: 5px;
