@@ -18,7 +18,8 @@
     "socket.io": "^1.2.1",
     "stylus-brunch": "~1.8.1",
     "tail": "~0.4.0",
-    "underscore": "^1.7.0"
+    "underscore": "^1.7.0",
+    "watch": "^0.13.0"
   },
   "devDependencies": {
     "css-brunch": "^1.7.0",

@@ -5,6 +5,7 @@ var q = require('q');
 var Tail = require('tail').Tail;
 var _ = require('underscore');
 var gm = require('gm');
+var watch = require('watch');
 
 var argv = require('minimist')(process.argv.slice(2));
 var port = argv.port || 3000;
@@ -137,6 +138,24 @@ app.get('/artefacts', function (req, res) {
             res.status(404).send('File not found.');
         }
     });
+});
+
+var liveFolder = path.join(folder, 'test-results');
+
+watch.watchTree(liveFolder, {
+    ignoreDotFiles: true,
+    ingoreUnreadableDir: true
+}, function (file, stat, prevStat) {
+    if ('object' === typeof file) {
+        // ignore, called on setup
+    } else if (!prevStat) {
+        // new file
+        console.log(file);
+    } else if (stat.nlink === 0) {
+        // file removed
+    } else {
+        // file changed
+    }
 });
 
 server.listen(port, function () {
