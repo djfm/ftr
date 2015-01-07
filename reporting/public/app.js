@@ -23376,6 +23376,9 @@ module.exports = View.extend({
         this.updateGroup(data.group);
     },
     updateGroup: function (groupName) {
+
+        // Todo: throttle
+
         var group = this.groups[groupName];
 
         var ui = this.renderTemplate(group, require('./templates/live_group'));

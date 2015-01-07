@@ -156,8 +156,8 @@ if (!fs.existsSync(liveFolder)) {
 watchr.watch({
     paths: [liveFolder],
     listeners: {
-        change: function (changeType, file) {
-            if (/\.jpg$/.exec(file)) {
+        change: function (changeType, file, stat) {
+            if (stat.nlink !== 0 && /\.jpg$/.exec(file)) {
                 var rel = path.relative(folder, file);
                 var data = {
                     name: path.basename(file, '.jpg'),
