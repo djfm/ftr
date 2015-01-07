@@ -6339,6 +6339,29 @@ body {
   background-color: #fff;
   padding: 5px;
 }
+#live-groups {
+  background-color: #fff;
+  padding: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+.live-group {
+  margin: 10;
+  width: 300;
+  word-break: break-all;
+}
+.live-group img {
+  text-align: center;
+  width: 100%;
+}
+.live-group .group-name {
+  font-size: 0.9em;
+  font-weight: bold;
+}
+.live-group .image-name {
+  font-size: 0.7em;
+}
 h1 {
   color: #fff;
 }

@@ -399,7 +399,7 @@ function applyFilter () {
 }
 
 function connect () {
-    socket = io.connect();
+    socket = io.getSocket();
 
     socket.on('database updated', function (db) {
         database = db;
@@ -22978,8 +22978,19 @@ $(function initializeApplication () {
 });
 
 require.register("io-client", function(exports, require, module) {
-/* global io */
-module.exports = io;
+var socket;
+var ioClient = window.io;
+delete window.io;
+
+module.exports = {
+    getSocket: function () {
+        if (!socket) {
+            socket = ioClient.connect();
+        }
+
+        return socket;
+    }
+};
 
 });
 
@@ -23147,7 +23158,8 @@ module.exports = Backbone.Router.extend({
 
     routes: {
         '': 'home',
-        'results/:historyId': 'result'
+        'results/:historyId': 'result',
+        'live': 'live'
     },
 
     home: function () {
@@ -23175,6 +23187,16 @@ module.exports = Backbone.Router.extend({
             });
         }
 
+    },
+
+    live: function () {
+        var LiveView = require('./views/live');
+
+        if (!this.liveView) {
+            this.liveView = new LiveView();
+        }
+
+        $('body').html(this.liveView.render().el);
     }
 });
 
@@ -23321,6 +23343,49 @@ module.exports = View.extend({
 
         this.filterView.render();
         this.resultsView.render();
+    }
+});
+
+});
+
+require.register("views/live", function(exports, require, module) {
+var View = require('../view');
+var _ = require('underscore');
+
+var socket = require('../io-client').getSocket();
+
+
+module.exports = View.extend({
+    template: require('./templates/live'),
+    initialize: function () {
+        var that = this;
+        socket.on('new live screenshot', function (data) {
+            that.handleScreenshot(data);
+        });
+
+        this.groups = {};
+    },
+    handleScreenshot: function (data) {
+        if (!this.$el.is(':visible')) {
+            return;
+        }
+
+        data.time = Date.now();
+        this.groups[data.group] = data;
+
+        this.updateGroup(data.group);
+    },
+    updateGroup: function (groupName) {
+        var group = this.groups[groupName];
+
+        var ui = this.renderTemplate(group, require('./templates/live_group'));
+
+        var anchor = this.$('.live-group[data-name="' + groupName + '"]');
+        if (anchor.length === 0) {
+            this.$('#live-groups').append(ui);
+        } else {
+            this.$(anchor.get(0)).replaceWith(ui);
+        }
     }
 });
 
@@ -23564,7 +23629,45 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 
-buf.push("<div class=\"container\"><h1> Test results</h1><div id=\"filter-view\"></div><div id=\"results-view\"></div></div>");;return buf.join("");
+buf.push("<div class=\"container\"><h1> Test results</h1><a href=\"/#live\" class=\"btn btn-default\">LiveView</a><br/><br/><div id=\"filter-view\"></div><div id=\"results-view\"></div></div>");;return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
+;require.register("views/templates/live", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+
+buf.push("<div class=\"container\"><h1>Live</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"live-groups\"></div></div>");;return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
+;require.register("views/templates/live_group", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),group = locals_.group,url = locals_.url,name = locals_.name;
+buf.push("<div" + (jade.attr("data-name", group, true, false)) + " class=\"live-group\"><div class=\"group-name\">" + (jade.escape(null == (jade_interp = group) ? "" : jade_interp)) + "</div><div><img" + (jade.attr("src", url, true, false)) + "/></div><div class=\"image-name\">" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</div></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {

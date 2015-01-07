@@ -235,7 +235,7 @@ function applyFilter () {
 }
 
 function connect () {
-    socket = io.connect();
+    socket = io.getSocket();
 
     socket.on('database updated', function (db) {
         database = db;

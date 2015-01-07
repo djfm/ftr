@@ -9,7 +9,8 @@ module.exports = Backbone.Router.extend({
 
     routes: {
         '': 'home',
-        'results/:historyId': 'result'
+        'results/:historyId': 'result',
+        'live': 'live'
     },
 
     home: function () {
@@ -37,5 +38,15 @@ module.exports = Backbone.Router.extend({
             });
         }
 
+    },
+
+    live: function () {
+        var LiveView = require('./views/live');
+
+        if (!this.liveView) {
+            this.liveView = new LiveView();
+        }
+
+        $('body').html(this.liveView.render().el);
     }
 });

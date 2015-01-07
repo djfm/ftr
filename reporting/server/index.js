@@ -140,7 +140,18 @@ app.get('/artefacts', function (req, res) {
     });
 });
 
+app.get('/live', function (req, res) {
+    var relPath = path.normalize(path.sep + req.param('path')); // this trims all '..' for safety
+    var filePath = path.normalize(path.join(folder, relPath));
+
+    res.sendFile(filePath);
+});
+
 var liveFolder = path.join(folder, 'test-results');
+
+if (!fs.existsSync(liveFolder)) {
+    fs.mkdirSync(liveFolder);
+}
 
 watch.watchTree(liveFolder, {
     ignoreDotFiles: true,
@@ -150,7 +161,15 @@ watch.watchTree(liveFolder, {
         // ignore, called on setup
     } else if (!prevStat) {
         // new file
-        console.log(file);
+        if (/\.jpg$/.exec(file)) {
+            var rel = path.relative(folder, file);
+            var data = {
+                name: path.basename(file, '.jpg'),
+                url: '/live?path=' + encodeURIComponent(rel),
+                group: path.dirname(path.relative(path.join(folder, 'test-results'), path.dirname(file)))
+            };
+            io.sockets.emit('new live screenshot', data);
+        }
     } else if (stat.nlink === 0) {
         // file removed
     } else {
