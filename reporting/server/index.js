@@ -5,7 +5,7 @@ var q = require('q');
 var Tail = require('tail').Tail;
 var _ = require('underscore');
 var gm = require('gm');
-var watch = require('watch');
+var watchr = require('watchr');
 
 var argv = require('minimist')(process.argv.slice(2));
 var port = argv.port || 3000;
@@ -153,27 +153,20 @@ if (!fs.existsSync(liveFolder)) {
     fs.mkdirSync(liveFolder);
 }
 
-watch.watchTree(liveFolder, {
-    ignoreDotFiles: true,
-    ingoreUnreadableDir: true
-}, function (file, stat, prevStat) {
-    if ('object' === typeof file) {
-        // ignore, called on setup
-    } else if (!prevStat) {
-        // new file
-        if (/\.jpg$/.exec(file)) {
-            var rel = path.relative(folder, file);
-            var data = {
-                name: path.basename(file, '.jpg'),
-                url: '/live?path=' + encodeURIComponent(rel),
-                group: path.dirname(path.relative(path.join(folder, 'test-results'), path.dirname(file)))
-            };
-            io.sockets.emit('new live screenshot', data);
+watchr.watch({
+    paths: [liveFolder],
+    listeners: {
+        change: function (changeType, file) {
+            if (/\.jpg$/.exec(file)) {
+                var rel = path.relative(folder, file);
+                var data = {
+                    name: path.basename(file, '.jpg'),
+                    url: '/live?path=' + encodeURIComponent(rel),
+                    group: path.dirname(path.relative(path.join(folder, 'test-results'), path.dirname(file)))
+                };
+                io.sockets.emit('new live screenshot', data);
+            }
         }
-    } else if (stat.nlink === 0) {
-        // file removed
-    } else {
-        // file changed
     }
 });
 
