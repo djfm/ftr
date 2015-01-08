@@ -16,7 +16,7 @@ else
                 div.kpi.reversed(class=statusInterval(pool.status.skipped_percent, 'skipped'))    Skipped: #{pool.status.skipped} (#{pool.status.skipped_percent}%)
                 div.kpi.reversed(class=statusInterval(pool.status.unknown_percent, 'unknown'))    Unknown: #{pool.status.unknown} (#{pool.status.unknown_percent}%)
             if pool.tags && pool.tags.length > 0
-                div    Tags (click on name to add a group by condition, clik on value to add a filter)
+                div    Tags (click on name to add a group by condition, click on value to add a filter)
                 each tag in pool.tags
                     div.tags-container
                         div.tag-label.add-group-by(data-by={pool: pool.name, tag: tag.tag})= tag.tag

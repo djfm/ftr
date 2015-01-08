@@ -23781,7 +23781,7 @@ buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value:
 buf.push("</div><div class=\"kpis-container\"><div class=\"kpi\">Total: " + (jade.escape((jade_interp = pool.status._count) == null ? '' : jade_interp)) + "</div><div" + (jade.cls(['kpi',statusInterval(pool.status.ok_percent, 'ok')], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.ko_percent, 'ko')], [null,null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.skipped_percent, 'skipped')], [null,null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.unknown_percent, 'unknown')], [null,null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
-buf.push("<div>   Tags (click on name to add a group by condition, clik on value to add a filter)</div>");
+buf.push("<div>   Tags (click on name to add a group by condition, click on value to add a filter)</div>");
 // iterate pool.tags
 ;(function(){
   var $$obj = pool.tags;
@@ -23964,7 +23964,7 @@ buf.push("<span" + (jade.attr("data-filter", {type: 'name', level: index, value:
 buf.push("</div><div class=\"kpis-container\"><div class=\"kpi\">Total: " + (jade.escape((jade_interp = pool.status._count) == null ? '' : jade_interp)) + "</div><div" + (jade.cls(['kpi',statusInterval(pool.status.ok_percent, 'ok')], [null,true])) + ">   OK: " + (jade.escape((jade_interp = pool.status.ok) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ok_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.ko_percent, 'ko')], [null,null,true])) + ">   KO: " + (jade.escape((jade_interp = pool.status.ko) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.ko_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.skipped_percent, 'skipped')], [null,null,true])) + ">   Skipped: " + (jade.escape((jade_interp = pool.status.skipped) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.skipped_percent) == null ? '' : jade_interp)) + "%)</div><div" + (jade.cls(['kpi','reversed',statusInterval(pool.status.unknown_percent, 'unknown')], [null,null,true])) + ">   Unknown: " + (jade.escape((jade_interp = pool.status.unknown) == null ? '' : jade_interp)) + " (" + (jade.escape((jade_interp = pool.status.unknown_percent) == null ? '' : jade_interp)) + "%)</div></div>");
 if ( pool.tags && pool.tags.length > 0)
 {
-buf.push("<div>   Tags (click on name to add a group by condition, clik on value to add a filter)</div>");
+buf.push("<div>   Tags (click on name to add a group by condition, click on value to add a filter)</div>");
 // iterate pool.tags
 ;(function(){
   var $$obj = pool.tags;
