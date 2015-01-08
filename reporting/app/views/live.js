@@ -20,13 +20,14 @@ module.exports = View.extend({
         }
 
         data.time = Date.now();
-        this.groups[data.group] = data;
-
-        this.updateGroup(data.group);
+        var lastUpdateTime = (this.groups[data.group] && this.groups[data.group].time) || 0;
+        
+        if (data.time > lastUpdateTime + 200) {
+            this.groups[data.group] = data;
+            this.updateGroup(data.group);
+        }
     },
     updateGroup: function (groupName) {
-
-        // Todo: throttle
 
         var group = this.groups[groupName];
 
