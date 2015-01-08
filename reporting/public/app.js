@@ -23385,7 +23385,7 @@ module.exports = View.extend({
 
         var anchor = this.$('.live-group[data-name="' + groupName + '"]');
         if (anchor.length === 0) {
-            this.$('#live-groups').append(ui);
+            this.$('#live-groups').prepend(ui);
         } else {
             this.$(anchor.get(0)).replaceWith(ui);
         }
@@ -23737,7 +23737,7 @@ buf.push("<div>Sorry, no results yet.</div>");
 }
 else
 {
-buf.push("<div>Results: " + (jade.escape((jade_interp = count) == null ? '' : jade_interp)) + "</div>");
+buf.push("<div id=\"results-count\">Results: " + (jade.escape((jade_interp = count) == null ? '' : jade_interp)) + "</div>");
 // iterate pools
 ;(function(){
   var $$obj = pools;

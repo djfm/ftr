@@ -34,7 +34,7 @@ module.exports = View.extend({
 
         var anchor = this.$('.live-group[data-name="' + groupName + '"]');
         if (anchor.length === 0) {
-            this.$('#live-groups').append(ui);
+            this.$('#live-groups').prepend(ui);
         } else {
             this.$(anchor.get(0)).replaceWith(ui);
         }

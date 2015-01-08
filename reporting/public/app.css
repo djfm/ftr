@@ -6335,6 +6335,11 @@ body {
   font-family: monospace;
   background-color: #444;
 }
+#results-count {
+  color: #fff;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
 #filter-view {
   background-color: #fff;
   padding: 5px;
@@ -6438,6 +6443,7 @@ span.remove {
   font-weight: bold;
   flex-grow: 0;
   width: 80;
+  word-break: break-all;
 }
 .filter-label {
   margin-bottom: 5px;
