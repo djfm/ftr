@@ -292,7 +292,8 @@ class Runner
 
         try {
             clearstatcache();
-            $info = json_decode(fread($infoHandle, filesize($infoFile)), true);
+            $size = filesize($infoFile);
+            $info = $size > 0 ? json_decode(fread($infoHandle, $size), true) : null;
 
             if (!$info) {
                 $info = [
