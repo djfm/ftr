@@ -6,8 +6,9 @@ use Exception;
 
 use djfm\ftr\Test\TestInterface;
 use djfm\ftr\Test\TestResult;
-use djfm\ftr\IPC\Client;
 use djfm\ftr\Helper\ExceptionHelper;
+
+use djfm\SocketRPC\Client;
 
 class Reporter
 {
@@ -22,7 +23,7 @@ class Reporter
 
     public function start(TestInterface $test)
     {
-        $this->client->post('/messages', [
+        $this->client->send([
             'type'           => 'testStart',
             'planToken'      => $this->planToken,
             'testIdentifier' => $test->getTestIdentifier(),
@@ -34,7 +35,7 @@ class Reporter
 
     public function end(TestInterface $test, TestResult $testResult)
     {
-        $this->client->post('/messages', [
+        $this->client->send([
             'type'           => 'testEnd',
             'planToken'      => $this->planToken,
             'testIdentifier' => $test->getTestIdentifier(),
@@ -47,7 +48,7 @@ class Reporter
 
     public function exception(Exception $exception)
     {
-        $this->client->post('/messages', [
+        $this->client->send([
             'type' => 'exception',
             'planToken' => $this->planToken,
             'exception' => ExceptionHelper::toArray($exception)

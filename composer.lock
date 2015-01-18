@@ -4,283 +4,54 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "dcb74490e2f912793899e3ee1b23083a",
+    "hash": "bdeea62ef1d645b5228413aa252859c3",
     "packages": [
         {
-            "name": "evenement/evenement",
-            "version": "v2.0.0",
+            "name": "djfm/socket-rpc",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/igorw/evenement.git",
-                "reference": "f6e843799fd4f4184d54d8fc7b5b3551c9fa803e"
+                "url": "https://github.com/djfm/SocketRPC.git",
+                "reference": "6f4d3620ee7ec2d035fd618c414252d61e144821"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/igorw/evenement/zipball/f6e843799fd4f4184d54d8fc7b5b3551c9fa803e",
-                "reference": "f6e843799fd4f4184d54d8fc7b5b3551c9fa803e",
+                "url": "https://api.github.com/repos/djfm/SocketRPC/zipball/6f4d3620ee7ec2d035fd618c414252d61e144821",
+                "reference": "6f4d3620ee7ec2d035fd618c414252d61e144821",
                 "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Evenement": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Igor Wiedler",
-                    "email": "igor@wiedler.ch",
-                    "homepage": "http://wiedler.ch/igor/"
-                }
-            ],
-            "description": "Événement is a very simple event dispatching library for PHP",
-            "keywords": [
-                "event-dispatcher",
-                "event-emitter"
-            ],
-            "time": "2012-11-02 14:49:47"
-        },
-        {
-            "name": "guzzle/parser",
-            "version": "v3.9.2",
-            "target-dir": "Guzzle/Parser",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/guzzle/parser.git",
-                "reference": "6874d171318a8e93eb6d224cf85e4678490b625c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/parser/zipball/6874d171318a8e93eb6d224cf85e4678490b625c",
-                "reference": "6874d171318a8e93eb6d224cf85e4678490b625c",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.7-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Guzzle\\Parser": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Interchangeable parsers used by Guzzle",
-            "homepage": "http://guzzlephp.org/",
-            "keywords": [
-                "URI Template",
-                "cookie",
-                "http",
-                "message",
-                "url"
-            ],
-            "time": "2014-02-05 18:29:46"
-        },
-        {
-            "name": "react/event-loop",
-            "version": "v0.4.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/event-loop.git",
-                "reference": "18c5297087ca01de85518e2b55078f444144aa1b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/18c5297087ca01de85518e2b55078f444144aa1b",
-                "reference": "18c5297087ca01de85518e2b55078f444144aa1b",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "suggest": {
-                "ext-event": "~1.0",
-                "ext-libev": "*",
-                "ext-libevent": ">=0.1.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.4-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "React\\EventLoop\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Event loop abstraction layer that libraries can use for evented I/O.",
-            "keywords": [
-                "event-loop"
-            ],
-            "time": "2014-02-26 17:36:58"
-        },
-        {
-            "name": "react/http",
-            "version": "v0.4.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/http.git",
-                "reference": "7b9d293b7a3f73acd840a341497e267d8562d637"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/http/zipball/7b9d293b7a3f73acd840a341497e267d8562d637",
-                "reference": "7b9d293b7a3f73acd840a341497e267d8562d637",
-                "shasum": ""
-            },
-            "require": {
-                "guzzle/parser": "~3.0",
-                "php": ">=5.4.0",
-                "react/socket": "0.4.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.4-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "React\\Http\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Library for building an evented http server.",
-            "keywords": [
-                "http"
-            ],
-            "time": "2014-02-02 01:11:26"
-        },
-        {
-            "name": "react/socket",
-            "version": "v0.4.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/socket.git",
-                "reference": "a6acf405ca53fc6cfbfe7c77778ededff46aa7cc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/socket/zipball/a6acf405ca53fc6cfbfe7c77778ededff46aa7cc",
-                "reference": "a6acf405ca53fc6cfbfe7c77778ededff46aa7cc",
-                "shasum": ""
-            },
-            "require": {
-                "evenement/evenement": "~2.0",
-                "php": ">=5.4.0",
-                "react/event-loop": "0.4.*",
-                "react/stream": "0.4.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.4-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "React\\Socket\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Library for building an evented socket server.",
-            "keywords": [
-                "Socket"
-            ],
-            "time": "2014-05-25 17:02:16"
-        },
-        {
-            "name": "react/stream",
-            "version": "v0.4.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/stream.git",
-                "reference": "acc7a5fec02e0aea674560e1d13c40ed0c8c5465"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/stream/zipball/acc7a5fec02e0aea674560e1d13c40ed0c8c5465",
-                "reference": "acc7a5fec02e0aea674560e1d13c40ed0c8c5465",
-                "shasum": ""
-            },
-            "require": {
-                "evenement/evenement": "~2.0",
-                "php": ">=5.4.0"
             },
             "require-dev": {
-                "react/event-loop": "0.4.*",
-                "react/promise": "~2.0"
-            },
-            "suggest": {
-                "react/event-loop": "0.4.*",
-                "react/promise": "~2.0"
+                "phpunit/phpunit": "~4.4"
             },
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.5-dev"
-                }
-            },
             "autoload": {
                 "psr-4": {
-                    "React\\Stream\\": "src"
+                    "djfm\\SocketRPC\\": "src",
+                    "djfm\\SocketRPC\\Tests\\": "tests"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
+            "authors": [
+                {
+                    "name": "djfm",
+                    "email": "fm.de.jouvencel@gmail.com"
+                }
             ],
-            "description": "Basic readable and writable stream interfaces that support piping.",
-            "keywords": [
-                "pipe",
-                "stream"
-            ],
-            "time": "2014-09-10 03:32:31"
+            "time": "2015-01-18 14:22:40"
         },
         {
             "name": "symfony/console",
-            "version": "v2.6.1",
+            "version": "v2.6.3",
             "target-dir": "Symfony/Component/Console",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Console.git",
-                "reference": "ef825fd9f809d275926547c9e57cbf14968793e8"
+                "reference": "6ac6491ff60c0e5a941db3ccdc75a07adbb61476"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Console/zipball/ef825fd9f809d275926547c9e57cbf14968793e8",
-                "reference": "ef825fd9f809d275926547c9e57cbf14968793e8",
+                "url": "https://api.github.com/repos/symfony/Console/zipball/6ac6491ff60c0e5a941db3ccdc75a07adbb61476",
+                "reference": "6ac6491ff60c0e5a941db3ccdc75a07adbb61476",
                 "shasum": ""
             },
             "require": {
@@ -323,21 +94,21 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "http://symfony.com",
-            "time": "2014-12-02 20:19:20"
+            "time": "2015-01-06 17:50:02"
         },
         {
             "name": "symfony/finder",
-            "version": "v2.6.1",
+            "version": "v2.6.3",
             "target-dir": "Symfony/Component/Finder",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Finder.git",
-                "reference": "0d3ef7f6ec55a7af5eca7914eaa0dacc04ccc721"
+                "reference": "16513333bca64186c01609961a2bb1b95b5e1355"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Finder/zipball/0d3ef7f6ec55a7af5eca7914eaa0dacc04ccc721",
-                "reference": "0d3ef7f6ec55a7af5eca7914eaa0dacc04ccc721",
+                "url": "https://api.github.com/repos/symfony/Finder/zipball/16513333bca64186c01609961a2bb1b95b5e1355",
+                "reference": "16513333bca64186c01609961a2bb1b95b5e1355",
                 "shasum": ""
             },
             "require": {
@@ -370,21 +141,21 @@
             ],
             "description": "Symfony Finder Component",
             "homepage": "http://symfony.com",
-            "time": "2014-12-02 20:19:20"
+            "time": "2015-01-03 08:01:59"
         },
         {
             "name": "symfony/process",
-            "version": "v2.6.1",
+            "version": "v2.6.3",
             "target-dir": "Symfony/Component/Process",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Process.git",
-                "reference": "bf0c9bd625f13b0b0bbe39919225cf145dfb935a"
+                "reference": "319794f611bd8bdefbac72beb3f05e847f8ebc92"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Process/zipball/bf0c9bd625f13b0b0bbe39919225cf145dfb935a",
-                "reference": "bf0c9bd625f13b0b0bbe39919225cf145dfb935a",
+                "url": "https://api.github.com/repos/symfony/Process/zipball/319794f611bd8bdefbac72beb3f05e847f8ebc92",
+                "reference": "319794f611bd8bdefbac72beb3f05e847f8ebc92",
                 "shasum": ""
             },
             "require": {
@@ -417,7 +188,7 @@
             ],
             "description": "Symfony Process Component",
             "homepage": "http://symfony.com",
-            "time": "2014-12-02 20:19:20"
+            "time": "2015-01-06 22:47:52"
         }
     ],
     "packages-dev": [
@@ -675,16 +446,16 @@
         },
         {
             "name": "phpunit/php-token-stream",
-            "version": "1.3.0",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-token-stream.git",
-                "reference": "f8d5d08c56de5cfd592b3340424a81733259a876"
+                "reference": "db32c18eba00b121c145575fcbcd4d4d24e6db74"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/f8d5d08c56de5cfd592b3340424a81733259a876",
-                "reference": "f8d5d08c56de5cfd592b3340424a81733259a876",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/db32c18eba00b121c145575fcbcd4d4d24e6db74",
+                "reference": "db32c18eba00b121c145575fcbcd4d4d24e6db74",
                 "shasum": ""
             },
             "require": {
@@ -697,7 +468,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.3-dev"
+                    "dev-master": "1.4-dev"
                 }
             },
             "autoload": {
@@ -720,20 +491,20 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2014-08-31 06:12:13"
+            "time": "2015-01-17 09:51:32"
         },
         {
             "name": "phpunit/phpunit",
-            "version": "4.4.1",
+            "version": "4.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "6a5e49a86ce5e33b8d0657abe145057fc513543a"
+                "reference": "e90575c2bb86290d57a262862dab1da125431576"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/6a5e49a86ce5e33b8d0657abe145057fc513543a",
-                "reference": "6a5e49a86ce5e33b8d0657abe145057fc513543a",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e90575c2bb86290d57a262862dab1da125431576",
+                "reference": "e90575c2bb86290d57a262862dab1da125431576",
                 "shasum": ""
             },
             "require": {
@@ -791,7 +562,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2014-12-28 07:57:05"
+            "time": "2015-01-17 11:24:41"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -1167,17 +938,17 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v2.6.1",
+            "version": "v2.6.3",
             "target-dir": "Symfony/Component/Yaml",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Yaml.git",
-                "reference": "3346fc090a3eb6b53d408db2903b241af51dcb20"
+                "reference": "82462a90848a52c2533aa6b598b107d68076b018"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Yaml/zipball/3346fc090a3eb6b53d408db2903b241af51dcb20",
-                "reference": "3346fc090a3eb6b53d408db2903b241af51dcb20",
+                "url": "https://api.github.com/repos/symfony/Yaml/zipball/82462a90848a52c2533aa6b598b107d68076b018",
+                "reference": "82462a90848a52c2533aa6b598b107d68076b018",
                 "shasum": ""
             },
             "require": {
@@ -1210,12 +981,14 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "http://symfony.com",
-            "time": "2014-12-02 20:19:20"
+            "time": "2015-01-03 15:33:07"
         }
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "djfm/socket-rpc": 20
+    },
     "prefer-stable": false,
     "platform": [],
     "platform-dev": []

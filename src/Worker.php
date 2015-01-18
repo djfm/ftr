@@ -2,17 +2,24 @@
 
 namespace djfm\ftr;
 
-use djfm\ftr\IPC\Client;
 use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
 use djfm\ftr\ExecutionPlan\ExecutionPlanInterface;
 
-class Worker extends Client
+use djfm\SocketRPC\Client;
+
+class Worker
 {
     private $planToken = null;
+    private $serverAddress;
+    private $client;
 
     public function setup(array $settings)
     {
-        $this->setAddress($settings['serverAddress']);
+        $this->serverAddress = $settings['serverAddress'];
+
+        $this->client = new Client();
+        $this->client->connect($this->serverAddress);
+
         if ($settings['bootstrap']) {
             require_once $settings['bootstrap'];
         }
@@ -20,7 +27,7 @@ class Worker extends Client
 
     public function run()
     {
-        $maybePlan = $this->post('/executionPlans/get');
+        $maybePlan = $this->client->query(['type' => 'getPlan']);
 
         if (isset($maybePlan['plan'])) {
             $plan = ExecutionPlanHelper::unserialize($maybePlan['plan']);
@@ -33,10 +40,13 @@ class Worker extends Client
     public function processPlan(ExecutionPlanInterface $plan)
     {
         register_shutdown_function(function () {
-            $this->post('/executionPlans/'.$this->planToken.'/done');
+            $this->client->send([
+                'type' => 'finishedPlan',
+                'planToken' => $this->planToken
+            ]);
         });
 
-        $reporter = new Reporter($this, $this->planToken);
+        $reporter = new Reporter($this->client, $this->planToken);
 
         $plan->setReporter($reporter);
 

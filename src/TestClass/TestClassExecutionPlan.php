@@ -161,7 +161,7 @@ class TestClassExecutionPlan implements ExecutionPlanInterface, TestPlanInterfac
                 $this->reporter->start($test);
                 $this->reporter->end($test, $test->run());
             } else {
-                $testResult = new TestResult();
+                $testResult = $test->getInitializedResult();
                 $testResult->setStatus('skipped');
                 $this->reporter->end($test, $testResult);
             }

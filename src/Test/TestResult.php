@@ -17,7 +17,6 @@ class TestResult implements ArraySerializableInterface
     private $zippedArtefactsDir = null;
     private $startedAt;
     private $tags = [];
-    private $identifier = [];
 
     public function __construct()
     {

@@ -13,6 +13,9 @@ class FTRTest extends \PHPUnit_Framework_TestCase
 {
     public function executeRun(array $options)
     {
+        ob_start(); // something is doing output, cannot figure out what exacly - just kill it,
+                    // because it messes up the display of test results
+
         $application = new Application();
         $application->add(new RunCommand());
 
@@ -27,8 +30,11 @@ class FTRTest extends \PHPUnit_Framework_TestCase
 
         $res = $command->getLastRunData();
 
+        ob_end_clean(); // the rest of the program is well behaved regarding output,
+                        // turn it on again.
+
         if (!is_array($res)) {
-            throw new Exception("Seems like the command failed to run.\n".$commandTester->getDisplay());
+            throw new Exception("Seems like the command failed to run.\n" . $commandTester->getDisplay());
         }
 
         return $res;
@@ -45,7 +51,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 1,
             'skipped' => 0,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testADataProvider()
@@ -59,7 +65,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 0,
             'skipped' => 0,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testADepends()
@@ -73,7 +79,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 1,
             'skipped' => 1,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testAMiscTest()
@@ -87,7 +93,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 0,
             'skipped' => 0,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testExtraTestFunctionsAreCalled()
@@ -101,7 +107,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 0,
             'skipped' => 0,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testFailingSetupBeforeClassSkipsAll()
@@ -115,7 +121,7 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 0,
             'skipped' => 2,
             'unknown' => 0
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 
     public function testDyingTest()
@@ -129,6 +135,6 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'ko' => 0,
             'skipped' => 0,
             'unknown' => 2
-        ], $res['summary']);
+        ], $res['summary']['status']);
     }
 }

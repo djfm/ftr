@@ -99,10 +99,16 @@ class TestMethod implements TestInterface
         return $this->dependencies;
     }
 
-    public function run()
+    public function getInitializedResult()
     {
         $testResult = new TestResult();
+        $testResult->setIdentifierHierarchy([$this->className, $this->name]);
+        return $testResult;
+    }
 
+    public function run()
+    {
+        $testResult = $this->getInitializedResult();
         $testResult->setIdentifierHierarchy([$this->className, $this->name]);
 
         $startedAt = microtime(true);

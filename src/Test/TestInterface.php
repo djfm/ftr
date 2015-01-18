@@ -9,4 +9,5 @@ interface TestInterface extends ArraySerializableInterface
     public function run();
     public function getTestIdentifier();
     public function getTestNumber();
+    public function getInitializedResult();
 }

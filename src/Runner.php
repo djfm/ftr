@@ -10,15 +10,15 @@ use Symfony\Component\Process\Process;
 use djfm\ftr\Loader\Loader;
 use djfm\ftr\Exception\NoSuchFileOrDirectoryException;
 use djfm\ftr\TestPlan\ParallelTestPlan;
-use djfm\ftr\IPC\Server;
 use djfm\ftr\Helper\Process as ProcessHelper;
 use djfm\ftr\ExecutionPlan\ExecutionPlanHelper;
 use djfm\ftr\Helper\ExceptionHelper;
 use djfm\ftr\Test\TestResult;
+use djfm\SocketRPC\Server;
 
 use Exception;
 
-class Runner extends Server
+class Runner
 {
     private $test;
     private $informationOnly = false;
@@ -36,6 +36,7 @@ class Runner extends Server
     private $bootstrap = '';
     private $stress = 1;
     private $startedAt;
+    private $server;
 
     private $results = [
         'summary' => [
@@ -158,67 +159,64 @@ class Runner extends Server
 
     public function run()
     {
+        if ($this->server) {
+            $this->server->stop();
+        }
+
         $this->startedAt = time();
         $this->loadTests();
         if ($this->informationOnly) {
             $this->writeln("Information only mode - not going to actually run the tests.");
         } else {
-            $this->bind();
-            $this->writeln(sprintf('<info>Started test server on %s</info>', $this->getAddress()));
-            parent::run();
+            $this->server = new Server();
+            $this->server->bind();
+            $this->writeln(sprintf('<info>Started test server on %s</info>', $this->server->getAddress()));
+            $this->setupServer($this->server);
+            $this->server->run();
         }
 
         return $this->results;
     }
 
-    public function reply($request, $response)
+    public function setupServer(Server $server)
     {
-        // don't trust clients to be consistent
-        $path = rtrim($request->getPath(), '/');
+        $server
+        ->on('query', function ($data, $respond) {
+            if (isset($data['type'])) {
+                switch ($data['type']) {
+                    case 'getPlan':
+                        $respond($this->dispatchPlan());
+                    break;
+                }
+            };
+        })
+        ->on('send', function ($data) {
+            if (isset($data['type'])) {
+                switch ($data['type']) {
+                    case 'finishedPlan':
+                        $this->onPlanFinished($data['planToken']);
+                    break;
+                    case 'testStart':
+                        $this->log('<comment>... Starting test  `' . $data['testIdentifier'] . '`</comment>');
+                    break;
+                    case 'testEnd':
+                        $this->handleTestEnd($data);
+                    break;
+                    case 'exception':
+                        if (!isset($this->dispatchedPlans[$data['planToken']]['exception'])) {
+                            $this->dispatchedPlans[$data['planToken']]['exception'] = [];
+                        }
 
-        $method = $request->getMethod();
+                        $this->dispatchedPlans[$data['planToken']]['exception'][] = $data['exception'];
 
-        if ($method === 'POST') {
-            $match = [];
-            if ($path === '/executionPlans/get') {
-                $response->writeHead(200, array('Content-Type' => 'application/json'));
-                $response->end(json_encode($this->dispatchPlan()));
-                return;
-            } elseif (preg_match('#^/executionPlans/(\d+)/done$#', $path, $match)) {
-                $planToken = (int) $match[1];
-                $this->onPlanFinished($planToken);
-                $response->end();
-                return;
-            } elseif ($path === '/messages') {
-                $this->drain($request, function ($body) use ($response) {
-                    $data = json_decode($body, true);
-                    $this->handleMessage($data);
-                    $response->writeHead(200, array('Content-Type' => 'text/plain'));
-                    $response->end();
-                });
-                return;
-            }
-        }
-
-        $response->writeHead(404, array('Content-Type' => 'text/plain'));
-        $response->end("ftrftrftr");
-    }
-
-    public function handleMessage(array $message)
-    {
-        if ($message['type'] === 'testStart') {
-            $this->log('<comment>... Starting test  `' . $message['testIdentifier'] . '`</comment>');
-        } elseif ($message['type'] === 'testEnd') {
-            $this->handleTestEnd($message);
-        } elseif ($message['type'] === 'exception') {
-            if (!isset($this->dispatchedPlans[$message['planToken']]['exception'])) {
-                $this->dispatchedPlans[$message['planToken']]['exception'] = [];
-            }
-
-            $this->dispatchedPlans[$message['planToken']]['exception'][] = $message['exception'];
-
-            $this->printException($message['exception']);
-        }
+                        $this->printException($data['exception']);
+                    break;
+                }
+            };
+        })
+        ->on('tick', function () {
+            $this->tick();
+        });
     }
 
     public function handleTestEnd(array $message)
@@ -366,7 +364,7 @@ class Runner extends Server
 
         for ($i = 0; $i < $plan->getTestsCount(); ++$i) {
             if (!$plan->getTestResult($i)) {
-                $testResult = new TestResult();
+                $testResult = $plan->getTest($i)->getInitializedResult();
                 $testResult->setStatus('unknown');
                 $plan->setTestResult($i, $testResult);
                 $this->handleResult($testResult);
@@ -404,7 +402,7 @@ class Runner extends Server
 
     public function done()
     {
-        $this->loop->stop();
+        $this->server->stop();
         $this->log('Done!');
         $this->summarizeResults();
     }
@@ -531,7 +529,7 @@ class Runner extends Server
         }
 
         $settings = json_encode([
-            'serverAddress' => $this->getAddress(),
+            'serverAddress' => $this->server->getAddress(),
             'environment' => [],
             'bootstrap' => $this->bootstrap
         ]);
