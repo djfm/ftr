@@ -117,7 +117,7 @@ app.get('/artefacts', function (req, res) {
                 );
                 fs.exists(thumbnailFileName, function (yes) {
                     if (yes) {
-                        res.sendFile(thumbnailFileName);
+                        res.sendFile(path.resolve(thumbnailFileName));
                     } else {
                         gm(filePath)
                         .options({imageMagick: true})
@@ -126,13 +126,13 @@ app.get('/artefacts', function (req, res) {
                             if (err) {
                                 res.status(500).send(err.toString());
                             } else {
-                                res.sendFile(thumbnailFileName);
+                                res.sendFile(path.resolve(thumbnailFileName));
                             }
                         });
                     }
                 });
             } else {
-                res.sendFile(filePath);
+                res.sendFile(path.resolve(filePath));
             }
         } else {
             res.status(404).send('File not found.');
@@ -143,8 +143,7 @@ app.get('/artefacts', function (req, res) {
 app.get('/live', function (req, res) {
     var relPath = path.normalize(path.sep + req.param('path')); // this trims all '..' for safety
     var filePath = path.normalize(path.join(folder, relPath));
-
-    res.sendFile(filePath);
+    res.sendFile(path.resolve(filePath));
 });
 
 var liveFolder = path.join(folder, 'test-results');
