@@ -13,7 +13,7 @@
         "symfony/process": "~2.6",
         "djfm/socket-rpc": "dev-master"
     },
-    "bin": ["ftr"],
+    "bin": ["bin/ftr"],
     "autoload": {
     	"psr-4": {
     		"djfm\\ftr\\": "src/",
