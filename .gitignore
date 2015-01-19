@@ -1,6 +1,7 @@
 vendor
 !reporting/app/vendor
 php_errors.log
+composer.phar
 test-history
 test-results
 node_modules
