@@ -560,8 +560,6 @@ class Runner
             return $process->isRunning();
         };
 
-        register_shutdown_function($stop);
-
         $handle = [
             'process' => $process,
             'stop' => $stop,
