@@ -57,6 +57,18 @@ function loadDatabase () {
                         database.push(newResult);
                         io.sockets.emit('database fragment', newResult);
                     });
+
+                    watchr.watch({
+                        paths: [streamFile],
+                        listeners: {
+                            change: function (changeType, file, stat) {
+                                if (stat.size === 0) {
+                                    database = [];
+                                    io.sockets.emit('database updated', database);
+                                }
+                            }
+                        }
+                    });
                 }
 
                 d.resolve(database);
@@ -100,6 +112,35 @@ app.get('/screenshots', function (req, res) {
             });
         });
         res.send(data);
+    });
+});
+
+app.get('/metadata', function (req, res) {
+    var root = req.param('root');
+    var metadataDir = path.join(folder, 'test-history', root);
+
+    fs.readdir(metadataDir, function (err, entries) {
+        if (err) {
+            res.status(404).end();
+        } else {
+            var data = {files: []};
+            _.each(entries, function (entry) {
+                if (entry === 'screenshots') {
+                    return;
+                }
+
+                if (entry === 'metadata.json') {
+                    data.metadata = JSON.parse(fs.readFileSync(path.join(metadataDir, entry)));
+                    return;
+                }
+
+                data.files.push({
+                    name: entry,
+                    url: '/artefacts?path=' + encodeURIComponent(path.join(root, entry))
+                });
+            });
+            res.send(data);
+        }
     });
 });
 

@@ -1,0 +1,29 @@
+mixin tree(root)
+    if typeof(root) === 'object'
+        ul
+            each value, key in root
+                li  
+                    span #{key}: 
+                    mixin tree(value)
+    else
+        span= root
+    
+
+if metadata || files.length > 0
+    h2 Metadata
+    div.row
+        if metadata
+            div.col-lg-6
+                div.panel.panel-default
+                    div.panel-heading Values
+                    div.panel-body
+                        +tree(metadata)
+        if files.length > 0
+            div.col-lg-6
+                div.panel.panel-default
+                    div.panel-heading Files
+                    div.panel-body
+                        ul
+                            each file in files
+                                li
+                                    a(target="_blank" href=file.url)= file.name

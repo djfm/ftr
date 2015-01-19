@@ -75,6 +75,7 @@ function addToPool (result, id, name) {
 
             },
             results: [],
+            okResults: [],
             exceptions: {}
         };
     }
@@ -82,6 +83,10 @@ function addToPool (result, id, name) {
     var pool = pools[id];
 
     pool.results.push(result);
+
+    if (result.status === 'ok') {
+        pool.okResults.push(result);
+    }
 
     if (_.has(pool.status, result.status)) {
         ++pool.status[result.status];
@@ -187,7 +192,7 @@ function applyFilter () {
             return;
         }
 
-        var name = result.identifierHierarchy.join(' :: ');
+        var name = result.name = result.identifierHierarchy.join(' :: ');
         var id = result.identifierHierarchy.join(' :: ');
 
         if (groupBy[name]) {

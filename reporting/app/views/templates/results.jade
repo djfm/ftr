@@ -25,6 +25,12 @@ else
                                 data-filter={type: 'tag', tag: tag.tag, value: value.value, pool: pool.name}
                                 class=statusInterval(value.ok_percent, 'ok')
                             )= value.value
+            if pool.okResults && pool.okResults.length > 0
+                div
+                    strong OK details
+                    span &nbsp;
+                    each result, index in pool.okResults
+                        a.details(href='#/results/'+result.historyId target='_blank')= index
             if pool.exceptions && Object.keys(pool.exceptions).length > 0
                 each exception in pool.exceptions
                     div.exception
@@ -33,4 +39,4 @@ else
                         div
                             span details: 
                             each result, index in exception.results
-                                a.details(href='#/results/'+result.historyId target='blank')= index+1
+                                a.details(href='#/results/'+result.historyId target='_blank')= index

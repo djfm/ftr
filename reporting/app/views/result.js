@@ -2,8 +2,6 @@ var View = require('../view');
 
 var $ = require('jquery');
 
-var dataProvider = require('../data-provider');
-
 module.exports = View.extend({
     template: require('./templates/result'),
     initialize: function initializeResultView () {
@@ -14,6 +12,7 @@ module.exports = View.extend({
     },
     afterRender: function afterRenderResult () {
         var that = this;
+
         $.get('/screenshots', {
             root: this.model.artefacts
         }).then(function (data) {
@@ -26,6 +25,12 @@ module.exports = View.extend({
             } else {
                 that.$('#screenshots').html('No screenshots, sorry!');
             }
+        });
+
+        $.get('/metadata', {
+            root: this.model.artefacts
+        }).then(function (metadata) {
+            that.$('#metadata').html(that.renderTemplate(metadata, require('./templates/metadata')));
         });
     },
     events: {

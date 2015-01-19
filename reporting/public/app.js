@@ -90,62 +90,6 @@
   globals.require.list = list;
   globals.require.brunch = true;
 })();
-(function() {
-  var WebSocket = window.WebSocket || window.MozWebSocket;
-  var br = window.brunch = (window.brunch || {});
-  var ar = br['auto-reload'] = (br['auto-reload'] || {});
-  if (!WebSocket || ar.disabled) return;
-
-  var cacheBuster = function(url){
-    var date = Math.round(Date.now() / 1000).toString();
-    url = url.replace(/(\&|\\?)cacheBuster=\d*/, '');
-    return url + (url.indexOf('?') >= 0 ? '&' : '?') +'cacheBuster=' + date;
-  };
-
-  var reloaders = {
-    page: function(){
-      window.location.reload(true);
-    },
-
-    stylesheet: function(){
-      [].slice
-        .call(document.querySelectorAll('link[rel="stylesheet"]'))
-        .filter(function(link){
-          return (link != null && link.href != null);
-        })
-        .forEach(function(link) {
-          link.href = cacheBuster(link.href);
-        });
-
-      // hack to force page repaint
-      var el = document.body;
-      var bodyDisplay = el.style.display || 'block';
-      el.style.display = 'none';
-      el.offsetHeight;
-      el.style.display = bodyDisplay;
-    }
-  };
-  var port = ar.port || 9485;
-  var host = br.server || window.location.hostname;
-
-  var connect = function(){
-    var connection = new WebSocket('ws://' + host + ':' + port);
-    connection.onmessage = function(event){
-      if (ar.disabled) return;
-      var message = event.data;
-      var reloader = reloaders[message] || reloaders.page;
-      reloader();
-    };
-    connection.onerror = function(){
-      if (connection.readyState) connection.close();
-    };
-    connection.onclose = function(){
-      window.setTimeout(connect, 1000);
-    };
-  };
-  connect();
-})();
-
 require.register("application", function(exports, require, module) {
 var application = {
     initialize: function () {
@@ -239,6 +183,7 @@ function addToPool (result, id, name) {
 
             },
             results: [],
+            okResults: [],
             exceptions: {}
         };
     }
@@ -246,6 +191,10 @@ function addToPool (result, id, name) {
     var pool = pools[id];
 
     pool.results.push(result);
+
+    if (result.status === 'ok') {
+        pool.okResults.push(result);
+    }
 
     if (_.has(pool.status, result.status)) {
         ++pool.status[result.status];
@@ -351,7 +300,7 @@ function applyFilter () {
             return;
         }
 
-        var name = result.identifierHierarchy.join(' :: ');
+        var name = result.name = result.identifierHierarchy.join(' :: ');
         var id = result.identifierHierarchy.join(' :: ');
 
         if (groupBy[name]) {
@@ -23400,8 +23349,6 @@ var View = require('../view');
 
 var $ = require('jquery');
 
-var dataProvider = require('../data-provider');
-
 module.exports = View.extend({
     template: require('./templates/result'),
     initialize: function initializeResultView () {
@@ -23412,6 +23359,7 @@ module.exports = View.extend({
     },
     afterRender: function afterRenderResult () {
         var that = this;
+
         $.get('/screenshots', {
             root: this.model.artefacts
         }).then(function (data) {
@@ -23424,6 +23372,12 @@ module.exports = View.extend({
             } else {
                 that.$('#screenshots').html('No screenshots, sorry!');
             }
+        });
+
+        $.get('/metadata', {
+            root: this.model.artefacts
+        }).then(function (metadata) {
+            that.$('#metadata').html(that.renderTemplate(metadata, require('./templates/metadata')));
         });
     },
     events: {
@@ -23684,13 +23638,130 @@ if (typeof define === 'function' && define.amd) {
 }
 });
 
+;require.register("views/templates/metadata", function(exports, require, module) {
+var __templateData = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+var locals_ = (locals || {}),metadata = locals_.metadata,files = locals_.files;
+jade_mixins["tree"] = function(root){
+var block = (this && this.block), attributes = (this && this.attributes) || {};
+if ( typeof(root) === 'object')
+{
+buf.push("<ul>");
+// iterate root
+;(function(){
+  var $$obj = root;
+  if ('number' == typeof $$obj.length) {
+
+    for (var key = 0, $$l = $$obj.length; key < $$l; key++) {
+      var value = $$obj[key];
+
+buf.push("<li> <span>" + (jade.escape((jade_interp = key) == null ? '' : jade_interp)) + ": </span>");
+jade_mixins["tree"](value);
+buf.push("</li>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var key in $$obj) {
+      $$l++;      var value = $$obj[key];
+
+buf.push("<li> <span>" + (jade.escape((jade_interp = key) == null ? '' : jade_interp)) + ": </span>");
+jade_mixins["tree"](value);
+buf.push("</li>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</ul>");
+}
+else
+{
+buf.push("<span>" + (jade.escape(null == (jade_interp = root) ? "" : jade_interp)) + "</span>");
+}
+};
+if ( metadata || files.length > 0)
+{
+buf.push("<h2>Metadata</h2><div class=\"row\">");
+if ( metadata)
+{
+buf.push("<div class=\"col-lg-6\"><div class=\"panel panel-default\"><div class=\"panel-heading\">Values</div><div class=\"panel-body\">");
+jade_mixins["tree"](metadata);
+buf.push("</div></div></div>");
+}
+if ( files.length > 0)
+{
+buf.push("<div class=\"col-lg-6\"><div class=\"panel panel-default\"><div class=\"panel-heading\">Files</div><div class=\"panel-body\"><ul>");
+// iterate files
+;(function(){
+  var $$obj = files;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var file = $$obj[$index];
+
+buf.push("<li><a target=\"_blank\"" + (jade.attr("href", file.url, true, false)) + ">" + (jade.escape(null == (jade_interp = file.name) ? "" : jade_interp)) + "</a></li>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var file = $$obj[$index];
+
+buf.push("<li><a target=\"_blank\"" + (jade.attr("href", file.url, true, false)) + ">" + (jade.escape(null == (jade_interp = file.name) ? "" : jade_interp)) + "</a></li>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</ul></div></div></div>");
+}
+buf.push("</div>");
+};return buf.join("");
+};
+if (typeof define === 'function' && define.amd) {
+  define([], function() {
+    return __templateData;
+  });
+} else if (typeof module === 'object' && module && module.exports) {
+  module.exports = __templateData;
+} else {
+  __templateData;
+}
+});
+
 ;require.register("views/templates/result", function(exports, require, module) {
 var __templateData = function template(locals) {
 var buf = [];
 var jade_mixins = {};
 var jade_interp;
-var locals_ = (locals || {}),status = locals_.status,exceptions = locals_.exceptions;
-buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"result-details\"><div>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</div>");
+var locals_ = (locals || {}),name = locals_.name,tags = locals_.tags,status = locals_.status,exceptions = locals_.exceptions;
+buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"result-details\"><div><strong>" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</strong><dl class=\"dl-horizontal\">");
+// iterate tags
+;(function(){
+  var $$obj = tags;
+  if ('number' == typeof $$obj.length) {
+
+    for (var key = 0, $$l = $$obj.length; key < $$l; key++) {
+      var value = $$obj[key];
+
+buf.push("<dt>" + (jade.escape(null == (jade_interp = key) ? "" : jade_interp)) + "</dt><dd>" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</dd>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var key in $$obj) {
+      $$l++;      var value = $$obj[key];
+
+buf.push("<dt>" + (jade.escape(null == (jade_interp = key) ? "" : jade_interp)) + "</dt><dd>" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</dd>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</dl><br/><br/></div><div><strong>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</strong></div>");
 // iterate exceptions
 ;(function(){
   var $$obj = exceptions;
@@ -23699,7 +23770,7 @@ buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
       var exception = $$obj[$index];
 
-buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div id=\"screenshots\">No screenshots yet...</div>");
+buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div>");
     }
 
   } else {
@@ -23707,13 +23778,13 @@ buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : j
     for (var $index in $$obj) {
       $$l++;      var exception = $$obj[$index];
 
-buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div><div id=\"screenshots\">No screenshots yet...</div>");
+buf.push("<div>" + (jade.escape(null == (jade_interp = exception.class) ? "" : jade_interp)) + "</div><div class=\"exception-message click-to-expand\">" + (jade.escape(null == (jade_interp = exception.message) ? "" : jade_interp)) + "</div>");
     }
 
   }
 }).call(this);
 
-buf.push("</div></div>");;return buf.join("");
+buf.push("<div id=\"metadata\">No metadata yet...</div><div id=\"screenshots\">No screenshots yet...</div></div></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -23851,6 +23922,33 @@ buf.push("</div>");
 }).call(this);
 
 }
+if ( pool.okResults && pool.okResults.length > 0)
+{
+buf.push("<div><strong>OK details</strong><span>&nbsp;</span>");
+// iterate pool.okResults
+;(function(){
+  var $$obj = pool.okResults;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+}
 if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
 {
 // iterate pool.exceptions
@@ -23870,7 +23968,7 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
       var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   } else {
@@ -23878,7 +23976,7 @@ buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) 
     for (var index in $$obj) {
       $$l++;      var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   }
@@ -23901,7 +23999,7 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
       var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   } else {
@@ -23909,7 +24007,7 @@ buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) 
     for (var index in $$obj) {
       $$l++;      var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   }
@@ -24034,6 +24132,33 @@ buf.push("</div>");
 }).call(this);
 
 }
+if ( pool.okResults && pool.okResults.length > 0)
+{
+buf.push("<div><strong>OK details</strong><span>&nbsp;</span>");
+// iterate pool.okResults
+;(function(){
+  var $$obj = pool.okResults;
+  if ('number' == typeof $$obj.length) {
+
+    for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
+      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var index in $$obj) {
+      $$l++;      var result = $$obj[index];
+
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+}
 if ( pool.exceptions && Object.keys(pool.exceptions).length > 0)
 {
 // iterate pool.exceptions
@@ -24053,7 +24178,7 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
       var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   } else {
@@ -24061,7 +24186,7 @@ buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) 
     for (var index in $$obj) {
       $$l++;      var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   }
@@ -24084,7 +24209,7 @@ buf.push("<div class=\"exception\"><div><strong>" + (jade.escape((jade_interp = 
     for (var index = 0, $$l = $$obj.length; index < $$l; index++) {
       var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   } else {
@@ -24092,7 +24217,7 @@ buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) 
     for (var index in $$obj) {
       $$l++;      var result = $$obj[index];
 
-buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index+1) ? "" : jade_interp)) + "</a>");
+buf.push("<a" + (jade.attr("href", '#/results/'+result.historyId, true, false)) + " target=\"_blank\" class=\"details\">" + (jade.escape(null == (jade_interp = index) ? "" : jade_interp)) + "</a>");
     }
 
   }
@@ -24130,30 +24255,30 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 var locals_ = (locals || {}),screenshots = locals_.screenshots,lastScreenshot = locals_.lastScreenshot;
-buf.push("<div class=\"thumbnails\">");
-// iterate screenshots
+buf.push("<h2> Screenshots</h2><div class=\"thumbnails\"><div>");
+// iterate screenshots.reverse()
 ;(function(){
-  var $$obj = screenshots;
+  var $$obj = screenshots.reverse();
   if ('number' == typeof $$obj.length) {
 
-    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
-      var screenshot = $$obj[$index];
+    for (var pos = 0, $$l = $$obj.length; pos < $$l; pos++) {
+      var screenshot = $$obj[pos];
 
-buf.push("<div class=\"thumbnail\"><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
+buf.push("<div" + (jade.cls(['thumbnail',(pos === 0 ? 'selected': '')], [null,true])) + "><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
     }
 
   } else {
     var $$l = 0;
-    for (var $index in $$obj) {
-      $$l++;      var screenshot = $$obj[$index];
+    for (var pos in $$obj) {
+      $$l++;      var screenshot = $$obj[pos];
 
-buf.push("<div class=\"thumbnail\"><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
+buf.push("<div" + (jade.cls(['thumbnail',(pos === 0 ? 'selected': '')], [null,true])) + "><img" + (jade.attr("src", screenshot.thumbnail, true, false)) + (jade.attr("data-src", screenshot.fullsize, true, false)) + "/></div>");
     }
 
   }
 }).call(this);
 
-buf.push("</div><div class=\"fullsize\"><img" + (jade.attr("src", lastScreenshot.fullsize, true, false)) + " class=\"fullsize\"/></div>");;return buf.join("");
+buf.push("</div></div><div class=\"fullsize\"><img" + (jade.attr("src", lastScreenshot.fullsize, true, false)) + " class=\"fullsize\"/></div>");;return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
   define([], function() {
@@ -24376,5 +24501,3 @@ exports.rethrow = function rethrow(err, filename, lineno, str){
 },{}]},{},[1])
 (1)
 });
-
-//# sourceMappingURL=app.js.map

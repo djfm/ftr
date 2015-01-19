@@ -1,9 +1,11 @@
+h2  Screenshots
 div.thumbnails
-    each screenshot in screenshots
-        div.thumbnail
-            img(
-                src=screenshot.thumbnail
-                data-src=screenshot.fullsize
+    div
+        each screenshot, pos in screenshots.reverse()
+            div.thumbnail(class=(pos === 0 ? 'selected': ''))
+                img(
+                    src=screenshot.thumbnail
+                    data-src=screenshot.fullsize
             )
 div.fullsize
     img.fullsize(src=lastScreenshot.fullsize)

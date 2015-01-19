@@ -4,8 +4,18 @@
     br
     br
     div#result-details
-        div Status: #{status}
+        div
+            strong= name
+            dl.dl-horizontal
+                each value, key in tags
+                    dt= key
+                    dd= value
+            br
+            br
+        div
+            strong Status: #{status}
         each exception in exceptions
             div= exception.class
             div.exception-message.click-to-expand= exception.message
-            #screenshots No screenshots yet...
+        #metadata No metadata yet...
+        #screenshots No screenshots yet...
