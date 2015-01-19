@@ -1,7 +1,19 @@
 #!/usr/bin/env php
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+$autoloads = [
+    __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'autoload.php', // we're in a vendor/bin dir
+    __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php' // we're not a dependency
+];
+
+foreach ($autoloads as $path)
+{
+    if (file_exists($path))
+    {
+        require $path;
+        break;
+    }
+}
 
 $app = new djfm\ftr\app\FTR();
 $app->run();
