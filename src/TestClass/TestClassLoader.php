@@ -125,7 +125,7 @@ class TestClassLoader implements LoaderInterface
                                     return false;
                                 }
 
-                                $regexp = '/' . preg_quote($filter) . '/';
+                                $regexp = '/' . $filter . '/';
 
                                 if (!preg_match($regexp, (string)$arguments[$pos])) {
                                     return false;
