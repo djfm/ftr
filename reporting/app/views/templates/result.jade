@@ -4,14 +4,12 @@
     br
     br
     div#result-details
+        h2= name
         div
-            strong= name
             dl.dl-horizontal
                 each value, key in tags
                     dt= key
                     dd= value
-            br
-            br
         div
             strong Status: #{status}
         each exception in exceptions

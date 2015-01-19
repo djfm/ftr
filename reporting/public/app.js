@@ -23684,16 +23684,16 @@ buf.push("<span>" + (jade.escape(null == (jade_interp = root) ? "" : jade_interp
 };
 if ( metadata || files.length > 0)
 {
-buf.push("<h2>Metadata</h2><div class=\"row\">");
+buf.push("<h3>Metadata</h3>");
 if ( metadata)
 {
-buf.push("<div class=\"col-lg-6\"><div class=\"panel panel-default\"><div class=\"panel-heading\">Values</div><div class=\"panel-body\">");
+buf.push("<div class=\"panel panel-default\"><div class=\"panel-heading\">Values</div><div class=\"panel-body\">");
 jade_mixins["tree"](metadata);
-buf.push("</div></div></div>");
+buf.push("</div></div>");
 }
 if ( files.length > 0)
 {
-buf.push("<div class=\"col-lg-6\"><div class=\"panel panel-default\"><div class=\"panel-heading\">Files</div><div class=\"panel-body\"><ul>");
+buf.push("<div class=\"panel panel-default\"><div class=\"panel-heading\">Files</div><div class=\"panel-body\"><ul>");
 // iterate files
 ;(function(){
   var $$obj = files;
@@ -23716,9 +23716,8 @@ buf.push("<li><a target=\"_blank\"" + (jade.attr("href", file.url, true, false))
   }
 }).call(this);
 
-buf.push("</ul></div></div></div>");
+buf.push("</ul></div></div>");
 }
-buf.push("</div>");
 };return buf.join("");
 };
 if (typeof define === 'function' && define.amd) {
@@ -23738,7 +23737,7 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 var locals_ = (locals || {}),name = locals_.name,tags = locals_.tags,status = locals_.status,exceptions = locals_.exceptions;
-buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"result-details\"><div><strong>" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</strong><dl class=\"dl-horizontal\">");
+buf.push("<div class=\"container\"><h1>Result details</h1><a href=\"/\" class=\"btn btn-default\"><< Home</a><br/><br/><div id=\"result-details\"><h2>" + (jade.escape(null == (jade_interp = name) ? "" : jade_interp)) + "</h2><div><dl class=\"dl-horizontal\">");
 // iterate tags
 ;(function(){
   var $$obj = tags;
@@ -23761,7 +23760,7 @@ buf.push("<dt>" + (jade.escape(null == (jade_interp = key) ? "" : jade_interp)) 
   }
 }).call(this);
 
-buf.push("</dl><br/><br/></div><div><strong>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</strong></div>");
+buf.push("</dl></div><div><strong>Status: " + (jade.escape((jade_interp = status) == null ? '' : jade_interp)) + "</strong></div>");
 // iterate exceptions
 ;(function(){
   var $$obj = exceptions;
@@ -24255,7 +24254,7 @@ var buf = [];
 var jade_mixins = {};
 var jade_interp;
 var locals_ = (locals || {}),screenshots = locals_.screenshots,lastScreenshot = locals_.lastScreenshot;
-buf.push("<h2> Screenshots</h2><div class=\"thumbnails\"><div>");
+buf.push("<h3> Screenshots</h3><div class=\"thumbnails\"><div>");
 // iterate screenshots.reverse()
 ;(function(){
   var $$obj = screenshots.reverse();
