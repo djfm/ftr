@@ -92,7 +92,16 @@ class TestClassLoader implements LoaderInterface
         // Prepare dataProviderFilter
         $dataProviderFilter = null;
         if ($this->dataProviderFilter) {
-            list ($methodFilter, $argumentsFilter) = explode(':', $this->dataProviderFilter, 2);
+            $parts = explode(':', $this->dataProviderFilter, 2);
+
+            if (count($parts) === 2) {
+                $methodFilter = $parts[0];
+                $argumentsFilter = $parts[1];
+            } else {
+                $methodFilter = null;
+                $argumentsFilter = $parts[0];
+            }
+
             $dataProviderFilter = [
                 'methodFilter' => $methodFilter,
                 'argumentsFilter' => explode(',', $argumentsFilter)
@@ -113,7 +122,7 @@ class TestClassLoader implements LoaderInterface
                     $dcp->getOption('dataprovider')
                 );
 
-                if ($dataProviderFilter && $method->getName() === $dataProviderFilter['methodFilter']) {
+                if ($dataProviderFilter && (!$dataProviderFilter['methodFilter'] || $method->getName() === $dataProviderFilter['methodFilter'])) {
                     $dataProviderArguments = array_filter(
                         $dataProviderArguments,
                         function ($arguments) use ($dataProviderFilter) {
