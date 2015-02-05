@@ -377,6 +377,8 @@ class Runner
 
     public function tick()
     {
+        static $prevMsg = null;
+
         $remainingClients = [];
         foreach ($this->spawnedClients as $client) {
             if ($client['isRunning']()) {
@@ -386,6 +388,20 @@ class Runner
         $this->spawnedClients = $remainingClients;
 
         $this->spawnClients();
+
+        if (getenv('DEBUG')) {
+            $msg = sprintf(
+                "Execution plans left: %d, Plans currently dispatched: %d, Spawned clients: %d\n",
+                count($this->executionPlans),
+                count($this->dispatchedPlans),
+                count($this->spawnedClients)
+            );
+
+            if ($msg !== $prevMsg) {
+                echo sprintf("%d %s", time(), $msg);
+                $prevMsg = $msg;
+            }
+        }
 
         if (empty($this->dispatchedPlans) && empty($this->executionPlans)) {
             $this->done();
