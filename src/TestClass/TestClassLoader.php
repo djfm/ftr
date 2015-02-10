@@ -183,7 +183,11 @@ class TestClassLoader implements LoaderInterface
         if ($dcp->hasOption('depends')) {
             $on = array_reverse($dcp->getArrayOption('depends'));
             foreach ($on as $offset => $methodName) {
-                $argumentName = $expectedInputArgumentNames[count($expectedInputArgumentNames) - 1 - $offset];
+                if (!empty($expectedInputArgumentNames)) {
+                    $argumentName = $expectedInputArgumentNames[count($expectedInputArgumentNames) - 1 - $offset];
+                } else {
+                    $argumentName = null;
+                }
                 $testMethod->setDependency($argumentName, $methodName);
             }
         }
