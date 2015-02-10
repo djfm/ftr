@@ -247,7 +247,13 @@ class Runner
             $statusString = 'UNKNWON';
         }
 
-        $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '`');
+        $tags = substr(
+            json_encode($testResult->getTags(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            0,
+            256
+        );
+
+        $this->log($statusSymbol . ' ' . $statusString . ': `' . $message['testIdentifier'] . '` ' . $tags);
 
         foreach ($testResult->getExceptions() as $exception) {
             $this->printException($exception);
@@ -469,8 +475,14 @@ class Runner
                 $testResult     = $finishedPlan['plan']->getTestResult($i);
                 $testIdentifier = $finishedPlan['plan']->getTest($i)->getTestIdentifier();
 
+                $tags = substr(
+                    json_encode($testResult->getTags(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                    0,
+                    256
+                );
+
                 foreach ($testResult->getExceptions() as $exception) {
-                    $this->writeln('In test `' . $testIdentifier . '`:');
+                    $this->writeln('In test `' . $testIdentifier . '` ' . $tags . ' :');
                     $this->printException($exception, '');
                 }
 
