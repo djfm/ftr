@@ -192,6 +192,15 @@ class TestMethod implements TestInterface
             }
         }
 
+        $finished = [$instance, 'finished'];
+        if (is_callable($finished)) {
+            try {
+                $finished($this->name, $arguments);
+            } catch (Exception $e) {
+                $testResult->addException($e);
+            }
+        }
+
         $runTime = microtime(true) - $startedAt;
         $testResult->setRunTime($runTime);
 
