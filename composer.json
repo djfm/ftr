@@ -11,7 +11,7 @@
         "symfony/console": "~2.6",
         "symfony/finder": "~2.6",
         "symfony/process": "~2.6",
-        "djfm/socket-rpc": "dev-master"
+        "djfm/socket-rpc": "~1"
     },
     "bin": ["bin/ftr"],
     "autoload": {

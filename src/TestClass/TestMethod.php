@@ -75,7 +75,16 @@ class TestMethod implements TestInterface
 
     public function setDependency($argumentName, $testName)
     {
-        $this->dependencies[$argumentName] = $testName;
+
+        if ($argumentName === null) {
+            if (array_key_exists(null, $this->dependencies)) {
+                $this->dependencies[null][] = $testName;
+            } else {
+                $this->dependencies[null] = [$testName];
+            }
+        } else {
+            $this->dependencies[$argumentName] = $testName;
+        }
 
         return $this;
     }
@@ -111,9 +120,17 @@ class TestMethod implements TestInterface
         $testResult = $this->getInitializedResult();
         $testResult->setIdentifierHierarchy([$this->className, $this->name]);
 
+        if (array_key_exists(null, $this->getDependencies())) {
+            foreach ($this->getDependencies()[null] as $dependsOn) {
+                if (!$this->executionPlan->hasValue($dependsOn)) {
+                    $testResult->setStatus('skipped');
+                    return $testResult;
+                }
+            }
+        }
+
         $startedAt = microtime(true);
         $arguments = [];
-
         foreach ($this->getExpectedInputArgumentNames() as $argumentName) {
             if (array_key_exists($argumentName, $this->getDependencies())) {
                 $dependsOn = $this->getDependencies()[$argumentName];

@@ -137,4 +137,18 @@ class FTRTest extends \PHPUnit_Framework_TestCase
             'unknown' => 2
         ], $res['summary']['status']);
     }
+
+    public function testNullDependencyFailedSkipsDependingTest()
+    {
+        $res = $this->executeRun(['test' => __DIR__ . '/fixtures/NullDependencyTest.php']);
+
+        $this->assertArrayHasKey('summary', $res);
+
+        $this->assertEquals([
+            'ok' => 1,
+            'ko' => 1,
+            'skipped' => 2,
+            'unknown' => 0
+        ], $res['summary']['status']);
+    }
 }
